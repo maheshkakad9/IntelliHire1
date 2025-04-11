@@ -33,6 +33,11 @@ const recruiterSchema = new Schema(
         phone: { 
             type: String 
         },
+        verificationStatus: { 
+            type: String, 
+            enum: ["pending", "approved", "rejected"], 
+            default: "pending" 
+        },
         jobsPosted: [{ 
             type: mongoose.Schema.Types.ObjectId, 
             ref: "Job" 

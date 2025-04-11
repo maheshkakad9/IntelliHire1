@@ -21,15 +21,55 @@ const getAllUsers = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, users, "All users fetched successfully"));
 });
 
+// Add this function if it doesn't already exist
+
+const verifyRecruiter = asyncHandler(async (req, res) => {
+    const { recruiterId } = req.params;
+    const { status } = req.body;
+    
+    if (!recruiterId) {
+        throw new ApiError(400, "Recruiter ID is required");
+    }
+    
+    if (!['approved', 'rejected'].includes(status)) {
+        throw new ApiError(400, "Status must be either 'approved' or 'rejected'");
+    }
+    
+    const recruiter = await Recruiter.findByIdAndUpdate(
+        recruiterId,
+        { verificationStatus: status },
+        { new: true }
+    ).select("-password -refreshToken");
+    
+    if (!recruiter) {
+        throw new ApiError(404, "Recruiter not found");
+    }
+    
+    return res.status(200).json(
+        new ApiResponse(200, recruiter, `Recruiter ${status} successfully`)
+    );
+});
 // Get all recruiters
 const getAllRecruiters = asyncHandler(async (req, res) => {
     const recruiters = await Recruiter.find().select("-password -refreshToken");
     return res.status(200).json(new ApiResponse(200, recruiters, "All recruiters fetched successfully"));
+});
+// Get all pending recruiters
+
+const getPendingRecruiters = asyncHandler(async (req, res) => {
+    // Find all recruiters with verificationStatus as pending
+    const pendingRecruiters = await Recruiter.find({ verificationStatus: "pending" }).select("-password -refreshToken");
+    
+    return res.status(200).json(
+        new ApiResponse(200, pendingRecruiters, "Pending recruiters fetched successfully")
+    );
 });
 
 export {
     getTotalUsers,
     getTotalRecruiters,
     getAllRecruiters,
+    getPendingRecruiters,
+    verifyRecruiter,
     getAllUsers
 }

@@ -5,8 +5,9 @@ import JobPostingList from './JobPostingList';
 import JobApplications from './JobApplications';
 
 const RecruiterDashboard = ({ recruiterData }) => {
+  const recruiter = recruiterData;
   // Set initial state with data from registration or defaults
-  const [recruiter, setRecruiter] = useState({
+  const [recruiterState, setRecruiterState] = useState({
     name: recruiterData?.name || "Your Name",
     email: recruiterData?.email || "example@company.com",
     phone: recruiterData?.phone || "",
@@ -23,26 +24,26 @@ const RecruiterDashboard = ({ recruiterData }) => {
 
   // Update recruiter profile
   const handleUpdateProfile = (updatedRecruiterData) => {
-    setRecruiter({...recruiter, ...updatedRecruiterData});
+    setRecruiterState({...recruiterState, ...updatedRecruiterData});
     // In a real app, you would also update the backend
   };
 
   // Add a new job posting
   const handleAddJobPosting = (newJob) => {
-    const updatedJobPostings = [...recruiter.jobPostings, {
+    const updatedJobPostings = [...recruiterState.jobPostings, {
       ...newJob,
       id: `job-${Date.now()}`, // Generate a temporary ID
       postedAt: new Date().toISOString(),
       applications: []
     }];
     
-    setRecruiter({...recruiter, jobPostings: updatedJobPostings});
+    setRecruiterState({...recruiterState, jobPostings: updatedJobPostings});
     // In a real app, you would also update the backend
   };
 
   // Update existing job posting
   const handleUpdateJobPosting = (updatedJob) => {
-    const updatedJobPostings = recruiter.jobPostings.map(job => 
+    const updatedJobPostings = recruiterState.jobPostings.map(job => 
       job.id === updatedJob.id ? updatedJob : job
     );
     
@@ -52,14 +53,14 @@ const RecruiterDashboard = ({ recruiterData }) => {
 
   // Delete job posting
   const handleDeleteJobPosting = (jobId) => {
-    const updatedJobPostings = recruiter.jobPostings.filter(job => job.id !== jobId);
+    const updatedJobPostings = recruiterState.jobPostings.filter(job => job.id !== jobId);
     setRecruiter({...recruiter, jobPostings: updatedJobPostings});
     // In a real app, you would also update the backend
   };
 
   // Handle application status updates
   const handleUpdateApplicationStatus = (jobId, applicationId, newStatus) => {
-    const updatedJobPostings = recruiter.jobPostings.map(job => {
+    const updatedJobPostings = recruiterState.jobPostings.map(job => {
       if (job.id === jobId) {
         const updatedApplications = job.applications.map(app => 
           app.id === applicationId ? {...app, status: newStatus} : app
@@ -74,13 +75,13 @@ const RecruiterDashboard = ({ recruiterData }) => {
   };
 
   // Check if recruiter is verified
-  const isVerified = recruiter.verificationStatus === 'approved';
+  const isVerified = recruiterState.verificationStatus === 'approved';
 
   // Render verification pending screen if not verified
-  if (recruiter.verificationStatus === 'pending') {
+  if (recruiterState.verificationStatus === 'pending') {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar recruiter={recruiter} />
+        <Navbar recruiter={recruiterState} />
         <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 text-center">
@@ -114,7 +115,7 @@ const RecruiterDashboard = ({ recruiterData }) => {
           {isEditing && (
             <div className="mt-8">
               <Profile 
-                recruiter={recruiter} 
+                recruiter={recruiterState} 
                 onUpdateProfile={handleUpdateProfile}
                 onFinishEditing={() => setIsEditing(false)}
                 isEditing={isEditing}
@@ -127,10 +128,11 @@ const RecruiterDashboard = ({ recruiterData }) => {
   }
   
   // Render rejected verification screen
-  if (recruiter.verificationStatus === 'rejected') {
+  if (recruiterState.verificationStatus === 'rejected') {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar recruiter={recruiter} />
+        
         <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6 text-center">
@@ -211,9 +213,9 @@ const RecruiterDashboard = ({ recruiterData }) => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-500">Current Plan:</span>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        recruiter.subscription === 'premium' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                        recruiterState.subscription === 'premium' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {recruiter.subscription === 'premium' ? 'Premium' : 'Free'}
+                        {recruiterState.subscription === 'premium' ? 'Premium' : 'Free'}
                       </span>
                     </div>
                     <div className="mt-4">
@@ -221,7 +223,7 @@ const RecruiterDashboard = ({ recruiterData }) => {
                         type="button"
                         className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
-                        {recruiter.subscription === 'premium' ? 'Manage Subscription' : 'Upgrade Plan'}
+                        {recruiterState.subscription === 'premium' ? 'Manage Subscription' : 'Upgrade Plan'}
                       </button>
                     </div>
                   </div>
@@ -271,7 +273,7 @@ const RecruiterDashboard = ({ recruiterData }) => {
               {/* Display the appropriate component based on active tab */}
               {activeTab === 'jobs' && (
                 <JobPostingList
-                  jobPostings={recruiter.jobPostings}
+                  jobPostings={recruiterState.jobPostings}
                   onAddJobPosting={handleAddJobPosting}
                   onUpdateJobPosting={handleUpdateJobPosting}
                   onDeleteJobPosting={handleDeleteJobPosting}
@@ -290,7 +292,7 @@ const RecruiterDashboard = ({ recruiterData }) => {
                   <div className="text-center">
                     <h3 className="text-lg font-medium text-gray-900">Analytics Dashboard</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {recruiter.subscription === 'premium' 
+                      {recruiterState.subscription === 'premium' 
                         ? 'Detailed analytics for your job postings.'
                         : 'Upgrade to Premium to access detailed analytics.'}
                     </p>

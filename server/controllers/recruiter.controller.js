@@ -6,6 +6,27 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+// Add this function to your controller
+
+// Add this function if it doesn't exist
+const getRecruiterProfile = asyncHandler(async (req, res) => {
+    try {
+        const recruiter = await Recruiter.findById(req.recruiter?._id).select("-password -refreshToken");
+        
+        if (!recruiter) {
+            throw new ApiError(404, "Recruiter not found");
+        }
+        
+        return res.status(200).json(
+            new ApiResponse(200, recruiter, "Recruiter profile fetched successfully")
+        );
+    } catch (error) {
+        throw new ApiError(500, error.message || "Error fetching recruiter profile");
+    }
+});
+
+
+
 const generateAccessAndRefreshTokens = async (recruiterId) => {
     try {
         const recruiter = await Recruiter.findById(recruiterId);
@@ -172,6 +193,8 @@ export {
     loginRecruiter,
     logoutRecruiter,
     refreshAccessTokenRecruiter,
+    getRecruiterProfile,  // This was missing from your exports
     getAllRecruiters
 }
+
 

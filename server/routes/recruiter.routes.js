@@ -4,7 +4,8 @@ import {
     loginRecruiter,
     logoutRecruiter,
     refreshAccessTokenRecruiter,
-    getAllRecruiters
+    getAllRecruiters,
+    getRecruiterProfile  // Add this import
 } from "../controllers/recruiter.controller.js"
 import { uploadRecruiterProfile } from "../middlewares/recruiterUpload.middlewares.js"
 import {verifyRecruiterJWT} from "../middlewares/recruiter.middlewares.js"
@@ -15,6 +16,8 @@ router.route("/register").post(
     uploadRecruiterProfile.single("profilePic"),
     registerRecruiter
 )
+
+router.route("/profile").get(verifyRecruiterJWT, getRecruiterProfile);
 
 router.route("/login").post(loginRecruiter)
 router.route("/getRecruiters").get(getAllRecruiters)
