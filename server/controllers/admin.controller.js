@@ -2,6 +2,7 @@ import { User } from "../models/user.models.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Recruiter } from "../models/recruiter.models.js";
+import { Job } from "../models/jobs.models.js";
 
 //To get Users Count
 const getTotalUsers = asyncHandler(async (req,res) => {
@@ -14,6 +15,14 @@ const getTotalRecruiters = asyncHandler(async (req,res) => {
     const totalRecruiter = await Recruiter.countDocuments();
     return res.status(200).json(new ApiResponse(200, { totalRecruiter }, "Total recruiters fetched successfully"));
 })
+
+//To get Jobs Count
+const getTotalJobs = asyncHandler(async (req, res) => {
+    const totalJobs = await Job.countDocuments();
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { totalJobs }, "Total jobs fetched successfully"));
+});
 
 //Get all users
 const getAllUsers = asyncHandler(async (req, res) => {
@@ -71,5 +80,6 @@ export {
     getAllRecruiters,
     getPendingRecruiters,
     verifyRecruiter,
-    getAllUsers
+    getAllUsers,
+    getTotalJobs
 }

@@ -1,6 +1,51 @@
+import { useState,useEffect } from "react";
 import React from 'react';
+import axios from 'axios';
 
 const DashboardOverview = () => {
+  const [users, setUsers] = useState([]);
+  const [totalUsersCount, setTotalUsersCount] = useState(0);
+  const [recruitersCount, setRecruitersCount] = useState(0);
+  const [jobsCount, setJobsCount] = useState(0);
+
+
+  useEffect(() => {
+    // Fetch recent users
+    axios.get('http://localhost:8000/api/v1/users/getUsers')
+      .then(response => {
+        setUsers(response.data.data);
+      })
+      .catch(error => {
+        console.error("Error fetching users:", error);
+      });
+
+    // Fetch total user count
+    axios.get('http://localhost:8000/api/v1/admin/users/count')
+      .then(response => {
+        setTotalUsersCount(response.data.data.totalUsers);
+      })
+      .catch(error => {
+        console.error("Error fetching total users count:", error);
+      });
+
+    // Fetch recruiter count
+    axios.get('http://localhost:8000/api/v1/admin/recruiters/count')
+      .then(response => {
+        setRecruitersCount(response.data.data.totalRecruiter);
+      })
+      .catch(error => {
+        console.error("Error fetching recruiter count:", error);
+      });
+
+      axios.get('http://localhost:8000/api/v1/admin/jobs/count')
+        .then(response => {
+        setJobsCount(response.data.data.totalJobs); // Make sure your backend response is in this format
+        })
+      .catch(error => {
+        console.error("Error fetching jobs count:", error);
+      });
+  }, []);
+
   return (
     <div className="mb-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
@@ -9,22 +54,22 @@ const DashboardOverview = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-semibold mb-1">Total Users</h3>
-          <p className="text-3xl font-bold">247</p>
+          <p className="text-3xl font-bold">{totalUsersCount}</p>
           <p className="text-green-600 text-sm mt-2">↑ 12% this week</p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-semibold mb-1">Active Recruiters</h3>
-          <p className="text-3xl font-bold">58</p>
+          <p className="text-3xl font-bold">{recruitersCount}</p>
           <p className="text-green-600 text-sm mt-2">↑ 5% this week</p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-semibold mb-1">Job Postings</h3>
-          <p className="text-3xl font-bold">124</p>
+          <p className="text-3xl font-bold">{jobsCount}</p>
           <p className="text-green-600 text-sm mt-2">↑ 18% this week</p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-gray-500 text-sm font-semibold mb-1">Resumes Analyzed</h3>
-          <p className="text-3xl font-bold">842</p>
+          <p className="text-3xl font-bold">6</p>
           <p className="text-green-600 text-sm mt-2">↑ 24% this week</p>
         </div>
       </div>
@@ -60,90 +105,39 @@ const DashboardOverview = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Type
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">John Smith</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-500">john@example.com</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                  Recruiter
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Active
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <button className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                <button className="text-red-600 hover:text-red-900">Delete</button>
-              </td>
-            </tr>
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Sarah Johnson</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-500">sarah@example.com</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Job Seeker
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Active
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <button className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                <button className="text-red-600 hover:text-red-900">Delete</button>
-              </td>
-            </tr>
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-gray-900">Michael Davis</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-500">michael@example.com</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                  Recruiter
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                  Inactive
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <button className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                <button className="text-red-600 hover:text-red-900">Delete</button>
-              </td>
-            </tr>
+            {users?.map((user) => (
+              <tr key={user._id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {user.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.phone}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.location}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <button className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                  <button className="text-red-600 hover:text-red-900">Delete</button>
+                </td>
+              </tr>
+            ))}
+            {users.length === 0 && (
+              <tr>
+                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No users found</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
