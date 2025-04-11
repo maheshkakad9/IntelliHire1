@@ -4,6 +4,8 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
   const [applicationResume, setApplicationResume] = useState(user.resumeUrl);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedResume, setUploadedResume] = useState(null);
+  const [resumeUrl, setResumeUrl] = useState('');
+  console.log(job);
   
   // Calculate match score based on user skills matching job requirements
   const getSkillMatchCount = () => {
@@ -33,14 +35,42 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+  
     try {
-      // In a real app, you'd upload the resume and send the application to the backend
-      await onApply(job.id, applicationResume);
+      let uploadedUrl = applicationResume;
+      let scoreDetails = null;
+  
+      // If user uploaded a new resume
+      if (uploadedResume) {
+        const formData = new FormData();
+        formData.append('resume', uploadedResume);
+        formData.append('jobId', job._id); // 👈 Send jobId with the file
+  
+        const response = await fetch('http://localhost:8000/api/v1/users/upload-resume', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include', // if you're using cookies with JWT
+        });
+  
+        if (!response.ok) {
+          throw new Error('Resume upload failed');
+        }
+  
+        const result = await response.json();
+  
+        uploadedUrl = result.data.updatedUser.resumeUrl;
+        scoreDetails = result.data.scoreDetails;
+  
+        console.log("Parsed Score Details:", scoreDetails);
+      }
+  
+      // Proceed with your job application logic
+      await onApply(job.id, uploadedUrl);
+  
       onClose();
     } catch (error) {
-      console.error('Application error:', error);
-      alert('Failed to submit application. Please try again.');
+      console.error('Error submitting application:', error);
+      alert('Failed to apply. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }

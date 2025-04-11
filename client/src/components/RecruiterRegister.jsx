@@ -204,7 +204,7 @@ const RecruiterRegister = () => {
 
         <p className="text-center text-sm text-gray-500 mt-2">
           Are you a job seeker?{' '}
-          <Link to="/candidate/register" className="text-blue-600 hover:underline">
+          <Link to="/login?type=user" className="text-blue-600 hover:underline">
             Register as Job Seeker
           </Link>
         </p>

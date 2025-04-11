@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import JobApplicationModal from './JobApplicationModal';
 
 const Jobs = ({ user, onUpdateAppliedJobs }) => {
@@ -6,83 +7,82 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ title: '', location: '', experience: '' });
 
-  // Mock data for jobs - replace with API call
-  useEffect(() => {
-    // Simulate API fetch delay
-    const timer = setTimeout(() => {
-      setJobs([
-        {
-          id: '1',
-          title: 'Frontend Developer',
-          company: 'TechSolutions Inc',
-          logo: 'https://via.placeholder.com/50',
-          location: 'Mumbai',
-          description: 'We are looking for a skilled frontend developer with expertise in React, Redux, and modern JavaScript. The ideal candidate will have experience building responsive web applications and working in an agile team environment.',
-          skillsRequired: ['React', 'JavaScript', 'HTML', 'CSS', 'Redux'],
-          experienceRequired: 2,
-          salaryRange: '₹10-15 LPA',
-          postedAt: '3 days ago',
-          matchScore: user.skills.some(skill => skill === 'React') ? 95 : 75,
-        },
-        {
-          id: '2',
-          title: 'Full Stack Developer',
-          company: 'InnovateTech',
-          logo: 'https://via.placeholder.com/50',
-          location: 'Bangalore',
-          description: 'Join our team to develop scalable web applications using Node.js and React. You will be responsible for both frontend and backend development, working closely with product managers and designers.',
-          skillsRequired: ['Node.js', 'React', 'MongoDB', 'Express'],
-          experienceRequired: 3,
-          salaryRange: '₹12-18 LPA',
-          postedAt: '1 day ago',
-          matchScore: user.skills.some(skill => skill === 'Node.js') ? 88 : 65,
-        },
-        {
-          id: '3',
-          title: 'UI/UX Designer',
-          company: 'Creative Designs',
-          logo: 'https://via.placeholder.com/50',
-          location: 'Remote',
-          description: 'We are seeking a UI/UX designer to create amazing user experiences. The ideal candidate should have a strong portfolio demonstrating expertise in creating user-centered designs.',
-          skillsRequired: ['Figma', 'User Research', 'Prototyping', 'UI Design'],
-          experienceRequired: 1,
-          salaryRange: '₹8-12 LPA',
-          postedAt: '5 days ago',
-          matchScore: user.skills.some(skill => skill === 'Figma') ? 90 : 60,
-        }
-      ]);
+  const fetchJobs = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:8000/api/v1/job/getAllJobs');
+      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      console.log("Fetched jobs: ", response.data);
+      setJobs(data);
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+      setJobs([]); // fallback
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, [user.skills]);
+  const searchJobs = async () => {
+    setLoading(true);
+    try {
+      const { title, location, experience } = filters;
+      console.log("Searching with:", {
+        title: filters.title,
+        location: filters.location,
+        experience: filters.experience
+      });
+      const response = await axios.get(`http://localhost:8000/api/v1/job/search`, {
+        params: { title, location, experience }
+      });
+      const data = Array.isArray(response.data.data) ? response.data.data : [];
+      console.log('Searched jobs: ', data);
+      setJobs(data);
+    } catch (err) {
+      console.error('Error searching jobs:', err);
+      setJobs([]); // fallback
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleApplyForJob = (jobId, resumeUrl) => {
-    // Check if user has already applied
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const handleApplyForJob = async (jobId, resumeUrl) => {
     if (user.appliedJobs.some(j => j.id === jobId)) {
       alert("You've already applied to this job");
       return;
     }
-    
-    // In a real application, this would call an API
-    // For now, just add to the user's applied jobs
-    const appliedJob = jobs.find(job => job.id === jobId);
-    if (appliedJob) {
+
+    try {
+      const response = await axios.get(`http://localhost:8000/api/v1/job/${jobId}`);
+      const job = response.data;
+
       const updatedAppliedJobs = [...user.appliedJobs, {
         id: jobId,
-        title: appliedJob.title,
-        company: appliedJob.company,
-        logo: appliedJob.logo,
+        title: job.title,
+        company: job.company,
+        logo: job.logo,
         appliedDate: new Date().toISOString(),
         status: 'Applied',
         resumeUrl
       }];
-      
+
       onUpdateAppliedJobs(updatedAppliedJobs);
       alert('Application submitted successfully!');
+    } catch (err) {
+      console.error('Error applying for job:', err);
     }
   };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
 
   return (
     <>
@@ -93,52 +93,48 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
             <div className="flex-grow">
               <label htmlFor="job-search" className="sr-only">Search for jobs</label>
               <div className="relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
                 <input
                   type="search"
-                  name="job-search"
+                  name="title"
                   id="job-search"
+                  value={filters.title}
+                  onChange={handleInputChange}
                   className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   placeholder="Search for jobs, skills, companies"
                 />
               </div>
             </div>
             <div className="flex gap-2">
-              <div>
-                <label htmlFor="location" className="sr-only">Location</label>
-                <select
-                  id="location"
-                  name="location"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="">Location</option>
-                  <option>Mumbai</option>
-                  <option>Bangalore</option>
-                  <option>Delhi</option>
-                  <option>Hyderabad</option>
-                  <option>Chennai</option>
-                  <option>Remote</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="experience" className="sr-only">Experience</label>
-                <select
-                  id="filter-experience"
-                  name="experience"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="">Experience</option>
-                  <option>0-1 years</option>
-                  <option>1-3 years</option>
-                  <option>3-5 years</option>
-                  <option>5+ years</option>
-                </select>
-              </div>
+              <select
+                name="location"
+                value={filters.location}
+                onChange={handleInputChange}
+                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value="">Location</option>
+                <option>Mumbai</option>
+                <option>Bangalore</option>
+                <option>Delhi</option>
+                <option>Hyderabad</option>
+                <option>Chennai</option>
+                <option>Remote</option>
+              </select>
+
+              <select
+                name="experience"
+                value={filters.experience}
+                onChange={handleInputChange}
+                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value="">Experience</option>
+                <option value="0">0 years</option>
+                <option value="1">1 years</option>
+                <option value="3">3 years</option>
+                <option value="5">5 years</option>
+              </select>
+
               <button
+                onClick={searchJobs}
                 type="button"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
@@ -148,6 +144,7 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
           </div>
         </div>
       </div>
+
 
       {/* Tabs */}
       <div className="bg-white shadow rounded-lg mb-5">

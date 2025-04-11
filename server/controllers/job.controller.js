@@ -41,9 +41,37 @@ const getJobById = asyncHandler(async (req,res) => {
     if (!job) throw new ApiError(404, "Job not found");
     return res.status(200).json(new ApiResponse(200, job, "Job details fetched successfully"));
 })
+
+const searchJobs = async (req,res) => {
+    const { title, location, experience } = req.query;
+
+    let query = {};
+
+    if (title) {
+        query.title = { $regex: title, $options: "i" }; // Case-insensitive title search
+    }
+
+    if (location) {
+        query.location = { $regex: location, $options: "i" }; // Case-insensitive location search
+    }
+
+    if (experience) {
+        const experienceArray = experience.split(',').map(e => parseInt(e.trim()));
+        query.experienceRequired = { $in: experienceArray };
+    }
+
+    try {
+        const jobs = await Job.find(query);
+        res.status(200).json(jobs);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching jobs", error });
+    }
+};
+
 export {
     createJob,
     getAllJobs,
     getJobsByRecruiter,
-    getJobById
+    getJobById,
+    searchJobs
 }
