@@ -153,10 +153,13 @@ const uploadResumeToCloudinary = asyncHandler(async(req,res) => {
         resume_url: resumeUrl,
         job_description: job.description,
         skills_required: job.skillsRequired,
+        priority_skills: job.prioritySkills,
+        experience_keywords: job.experienceKeywords,
+        degree_requirements: job.degreeRequirements
     }).catch(error => {
         console.error("Error in FastAPI request:", error.response ? error.response.data : error.message);
         throw new ApiError(400, "Error in scoring resume");
-    }); 
+    });
 
     const scoreDetails = scoringResponse.data;
 

@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const createJob = asyncHandler(async (req,res) => {
-    const { title, description, skillsRequired, experienceRequired, location, salaryRange } = req.body;
+    const { title, description, skillsRequired, experienceRequired, location, salaryRange, experienceKeywords, degreeRequirements, prioritySkills} = req.body;
 
     const recruiterId = req.recruiter?._id || req.body.recruiterId;
 
@@ -17,6 +17,9 @@ const createJob = asyncHandler(async (req,res) => {
         description,
         skillsRequired,
         experienceRequired,
+        experienceKeywords,
+        degreeRequirements,
+        prioritySkills,  
         location,
         salaryRange,
         recruiterId

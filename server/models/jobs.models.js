@@ -16,6 +16,21 @@ const jobSchema = new Schema(
         experienceRequired: { 
             type: Number 
         },
+        experienceKeywords: [
+            {
+              type: String
+            }
+        ],
+        degreeRequirements: [
+            {
+              type: String
+            }
+        ],
+        prioritySkills: [
+            {
+              type: String
+            }
+        ],
         location: { 
             type: String 
         },
@@ -32,7 +47,10 @@ const jobSchema = new Schema(
             status: { type: String, enum: ["Applied", "Shortlisted", "Hired"], default: "Applied" },
             breakdown: {
                 description_score: { type: Number },
-                skills_score: { type: Number }
+                skills_score: { type: Number },
+                priority_skills_score: { type: Number },
+                experience_score: { type: Number },
+                education_score: { type: Number }
             }
         }],
     },  
