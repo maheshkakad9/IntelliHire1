@@ -12,7 +12,7 @@ const JobSeekerRegister = ({ onRegister }) => {
   const [skills, setSkills] = useState('');
   const [experience, setExperience] = useState('');
   const [education, setEducation] = useState('');
-  const [resumeFile, setResumeFile] = useState(null);
+  // Removed resumeFile state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -28,7 +28,7 @@ const JobSeekerRegister = ({ onRegister }) => {
       // Format the skills as an array
       const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill);
       
-      // Create FormData for file upload
+      // Create FormData for API submission
       const formData = new FormData();
       formData.append('name', name);
       formData.append('email', email);
@@ -39,9 +39,7 @@ const JobSeekerRegister = ({ onRegister }) => {
       formData.append('experience', experience);
       formData.append('education', education);
       
-      if (resumeFile) {
-        formData.append('resume', resumeFile);
-      }
+      // Removed resume append section
       
       // Call register API with the form data
       await onRegister(formData);
@@ -55,7 +53,7 @@ const JobSeekerRegister = ({ onRegister }) => {
         skills: skillsArray,
         experience,
         education,
-        resumeUrl: resumeFile ? URL.createObjectURL(resumeFile) : null,
+        resumeUrl: null, // Set to null since we're not uploading a resume
         profilePicUrl: null // Default profile pic will be used
       };
       
@@ -72,12 +70,7 @@ const JobSeekerRegister = ({ onRegister }) => {
     }
   };
 
-  const handleResumeChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setResumeFile(file);
-    }
-  };
+  // Removed handleResumeChange function
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -122,7 +115,7 @@ const JobSeekerRegister = ({ onRegister }) => {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="mb-4">
             <label
@@ -167,14 +160,13 @@ const JobSeekerRegister = ({ onRegister }) => {
               htmlFor="phone"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Phone*
+              Phone
             </label>
             <input
               id="phone"
               type="tel"
               placeholder="Your phone number"
               value={phone}
-              required
               onChange={e => setPhone(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -260,22 +252,7 @@ const JobSeekerRegister = ({ onRegister }) => {
           </div>
         </div>
 
-        <div className="mb-6">
-          <label
-            htmlFor="resumeFile"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Resume (optional)
-          </label>
-          <input
-            id="resumeFile"
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={handleResumeChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <p className="text-xs text-gray-500 mt-1">Supported formats: PDF, DOC, DOCX</p>
-        </div>
+        {/* Removed resume upload section completely */}
 
         <button
           type="submit"
