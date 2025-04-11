@@ -150,7 +150,7 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login?type=candidate" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+              <Link to="/login?type=user" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
                 Job Seeker Login
               </Link>
             </div>

@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const RecruiterRegister = ({ onRegister }) => {
+const RecruiterRegister = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [profilePic, setProfilePic] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = e => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (password !== confirmPassword) {
-      alert("Passwords don't match");
+      alert("Passwords do not match!");
       return;
     }
-    
-    // Create FormData for file upload
+
     const formData = new FormData();
     formData.append('name', name);
     formData.append('email', email);
@@ -26,12 +30,30 @@ const RecruiterRegister = ({ onRegister }) => {
     formData.append('companyName', companyName);
     formData.append('companyWebsite', companyWebsite);
     formData.append('phone', phone);
-    if (profilePic) {
-      formData.append('profilePic', profilePic);
+    if (profilePic) formData.append('profilePic', profilePic);
+
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/recruiter/register`, // change if needed
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          withCredentials: true, // only needed if you're using cookies
+        }
+      );
+
+      alert('Recruiter registered successfully!');
+      console.log(response.data);
+      navigate('/recruiter/login');
+    } catch (error) {
+      console.error('Error registering recruiter:', error);
+      alert(error?.response?.data?.message || 'Registration failed!');
+    } finally {
+      setLoading(false);
     }
-    
-    // Call register API with the form data
-    onRegister(formData);
   };
 
   return (
@@ -39,176 +61,150 @@ const RecruiterRegister = ({ onRegister }) => {
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg bg-white p-8 rounded-lg shadow-lg my-8"
+        encType="multipart/form-data"
       >
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Create Recruiter Account</h2>
-        
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Create Recruiter Account
+        </h2>
+
         <div className="mb-4">
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
             Full Name*
           </label>
           <input
             id="name"
             type="text"
-            placeholder="Enter your full name"
             value={name}
             required
-            onChange={e => setName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter your full name"
           />
         </div>
 
         <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             Email*
           </label>
           <input
             id="email"
             type="email"
-            placeholder="Enter your email"
             value={email}
             required
-            onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter your email"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="mb-4">
-            <label
-              htmlFor="companyName"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
               Company Name*
             </label>
             <input
               id="companyName"
               type="text"
-              placeholder="Your company name"
               value={companyName}
               required
-              onChange={e => setCompanyName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Your company name"
             />
           </div>
 
           <div className="mb-4">
-            <label
-              htmlFor="companyWebsite"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="companyWebsite" className="block text-sm font-medium text-gray-700 mb-1">
               Company Website
             </label>
             <input
               id="companyWebsite"
               type="url"
-              placeholder="https://example.com"
               value={companyWebsite}
-              onChange={e => setCompanyWebsite(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => setCompanyWebsite(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="https://example.com"
             />
           </div>
         </div>
 
         <div className="mb-4">
-          <label
-            htmlFor="phone"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
             Phone Number
           </label>
           <input
             id="phone"
             type="tel"
-            placeholder="Your contact number"
             value={phone}
-            onChange={e => setPhone(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            placeholder="Your contact number"
           />
         </div>
 
         <div className="mb-4">
-          <label
-            htmlFor="profilePic"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="profilePic" className="block text-sm font-medium text-gray-700 mb-1">
             Profile Picture
           </label>
           <input
             id="profilePic"
             type="file"
             accept="image/*"
-            onChange={e => setProfilePic(e.target.files[0])}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => setProfilePic(e.target.files[0])}
+            className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="mb-4">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               Password*
             </label>
             <input
               id="password"
               type="password"
-              placeholder="Create a password"
               value={password}
               required
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Create a password"
             />
           </div>
 
           <div className="mb-6">
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
               Confirm Password*
             </label>
             <input
               id="confirmPassword"
               type="password"
-              placeholder="Confirm your password"
               value={confirmPassword}
               required
-              onChange={e => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Confirm your password"
             />
           </div>
         </div>
 
         <button
           type="submit"
+          disabled={loading}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200"
         >
-          Register as Recruiter
+          {loading ? 'Registering...' : 'Register as Recruiter'}
         </button>
-        
+
         <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{' '}
-          <Link
-            to="/recruiter/login"
-            className="text-blue-600 hover:underline"
-          >
-            Login
+          <Link to="/login?type=recruiter" className="text-blue-600 hover:underline">
+            Login as Recruiter
           </Link>
         </p>
-        
+
         <p className="text-center text-sm text-gray-500 mt-2">
           Are you a job seeker?{' '}
-          <Link
-            to="/candidate/register"
-            className="text-blue-600 hover:underline"
-          >
+          <Link to="/candidate/register" className="text-blue-600 hover:underline">
             Register as Job Seeker
           </Link>
         </p>

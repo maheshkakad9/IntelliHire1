@@ -260,11 +260,22 @@ const getAllUsers = asyncHandler(async (req,res) => {
     return res.status(200).json(new ApiResponse(200,users,"Fetched all users"));
 });
 
+const getUserProfile = asyncHandler(async (req,res) => {
+    const user = req.user;
+
+    res.status(200).json({
+        success: true,
+        message: "user profile fetched successfully",
+        user
+    })
+})
+
 export {
     registerUser,
     uploadResumeToCloudinary,
     loginUser,
     logoutUser,
     refreshAccessToken,
-    getAllUsers
+    getAllUsers,
+    getUserProfile
 }

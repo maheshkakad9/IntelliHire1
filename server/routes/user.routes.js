@@ -5,7 +5,8 @@ import {
     loginUser,
     logoutUser,
     refreshAccessToken, 
-    getAllUsers
+    getAllUsers,
+    getUserProfile
 } from "../controllers/user.controller.js"
 import { upload } from "../middlewares/userUpload.middlewares.js"
 import { uploadResume } from "../middlewares/uploadResume.middlewares.js"
@@ -24,6 +25,7 @@ router.route("/getUsers").get(getAllUsers)
 router.route("/logout").post(verifyJWT, logoutUser)
 router.route("refresh-token").post(refreshAccessToken)
 router.route("/upload-resume").post(verifyJWT,uploadResume.single("resume"),uploadResumeToCloudinary);
+router.route("/profile").get(verifyJWT,getUserProfile);
 
 export default router 
 
