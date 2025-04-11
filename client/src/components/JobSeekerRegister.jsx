@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const JobSeekerRegister = ({ onRegister }) => {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,33 +13,70 @@ const JobSeekerRegister = ({ onRegister }) => {
   const [experience, setExperience] = useState('');
   const [education, setEducation] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert("Passwords don't match");
       return;
     }
     
-    // Format the skills as an array
-    const skillsArray = skills.split(',').map(skill => skill.trim());
+    setIsSubmitting(true);
     
-    // Create FormData for file upload
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('password', password);
-    formData.append('phone', phone);
-    formData.append('location', location);
-    formData.append('skills', JSON.stringify(skillsArray));
-    formData.append('experience', experience);
-    formData.append('education', education);
-    if (resumeFile) {
-      formData.append('resume', resumeFile);
+    try {
+      // Format the skills as an array
+      const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill);
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('phone', phone);
+      formData.append('location', location);
+      formData.append('skills', JSON.stringify(skillsArray));
+      formData.append('experience', experience);
+      formData.append('education', education);
+      
+      if (resumeFile) {
+        formData.append('resume', resumeFile);
+      }
+      
+      // Call register API with the form data
+      await onRegister(formData);
+      
+      // Create a user object to pass to the dashboard
+      const userData = {
+        name,
+        email,
+        phone,
+        location,
+        skills: skillsArray,
+        experience,
+        education,
+        resumeUrl: resumeFile ? URL.createObjectURL(resumeFile) : null,
+        profilePicUrl: null // Default profile pic will be used
+      };
+      
+      // Store user data in localStorage for persistence across page refreshes
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Redirect to the jobseeker dashboard
+      navigate('/candidate/dashboard');
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Call register API with the form data
-    onRegister(formData);
+  };
+
+  const handleResumeChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setResumeFile(file);
+    }
   };
 
   return (
@@ -129,13 +167,14 @@ const JobSeekerRegister = ({ onRegister }) => {
               htmlFor="phone"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Phone
+              Phone*
             </label>
             <input
               id="phone"
               type="tel"
               placeholder="Your phone number"
               value={phone}
+              required
               onChange={e => setPhone(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
@@ -164,13 +203,14 @@ const JobSeekerRegister = ({ onRegister }) => {
             htmlFor="skills"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Skills (comma-separated)
+            Skills (comma-separated)*
           </label>
           <input
             id="skills"
             type="text"
             placeholder="JavaScript, React, Node.js"
             value={skills}
+            required
             onChange={e => setSkills(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -201,11 +241,12 @@ const JobSeekerRegister = ({ onRegister }) => {
               htmlFor="education"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Highest Education
+              Highest Education*
             </label>
             <select
               id="education"
               value={education}
+              required
               onChange={e => setEducation(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
@@ -221,25 +262,27 @@ const JobSeekerRegister = ({ onRegister }) => {
 
         <div className="mb-6">
           <label
-            htmlFor="resume"
+            htmlFor="resumeFile"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Resume (PDF/DOC)
+            Resume (optional)
           </label>
           <input
-            id="resume"
+            id="resumeFile"
             type="file"
             accept=".pdf,.doc,.docx"
-            onChange={e => setResumeFile(e.target.files[0])}
+            onChange={handleResumeChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
+          <p className="text-xs text-gray-500 mt-1">Supported formats: PDF, DOC, DOCX</p>
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200"
+          disabled={isSubmitting}
+          className={`w-full ${isSubmitting ? 'bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'} text-white py-2 px-4 rounded-lg transition duration-200`}
         >
-          Register as Job Seeker
+          {isSubmitting ? 'Registering...' : 'Register as Job Seeker'}
         </button>
         
         <p className="text-center text-sm text-gray-600 mt-4">

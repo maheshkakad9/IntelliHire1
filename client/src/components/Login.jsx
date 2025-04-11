@@ -1,36 +1,39 @@
 import React, { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 
 const Login = ({ onLogin }) => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get('type') || 'general';
+  const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = e => {
     e.preventDefault();
-    // Call login API with user type information
+    setError('');
+
+    // Admin hardcoded authentication
+    if (email === 'admin@gmail.com' && password === 'admin123') {
+      // Direct to admin dashboard
+      navigate('/admin/dashboard');
+      return;
+    }
+
+    // For other user types, call the provided onLogin function
     onLogin({ email, password, userType });
   };
 
-  // Set title and registration link based on user type
+  // Set title based on user type
   let title = 'Login';
-  let registerLink = '/register';
-  let registerText = 'Sign up';
   
   if (userType === 'recruiter') {
     title = 'Recruiter Login';
-    registerLink = '/recruiter/register';
-    registerText = 'Register as Recruiter';
   } else if (userType === 'candidate') {
     title = 'Job Seeker Login';
-    registerLink = '/candidate/register';
-    registerText = 'Register as Job Seeker';
   } else if (userType === 'admin') {
     title = 'Admin Login';
-    registerLink = '/admin/register';
-    registerText = 'Contact Admin';
   }
 
   return (
@@ -40,6 +43,13 @@ const Login = ({ onLogin }) => {
         className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg"
       >
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">{title}</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        
         <div className="mb-4">
           <label
             htmlFor="email"
@@ -88,23 +98,33 @@ const Login = ({ onLogin }) => {
         >
           Login
         </button>
-        <p className="text-center text-sm text-gray-600 mt-4">
-          Don't have an account?{' '}
-          <Link
-            to={registerLink}
-            className={`${
-              userType === 'recruiter' 
-                ? 'text-blue-600' 
-                : userType === 'candidate' 
-                  ? 'text-green-600' 
-                  : userType === 'admin'
-                    ? 'text-gray-700'
-                    : 'text-blue-500'
-            } hover:underline`}
-          >
-            {registerText}
-          </Link>
-        </p>
+        
+        {/* Registration options based on user type */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600 mb-2">Don't have an account?</p>
+          
+          <div className="flex flex-col sm:flex-row justify-center gap-2">
+            <Link
+              to="/recruiter/register"
+              className="text-blue-600 hover:bg-blue-50 border border-blue-600 px-3 py-1 rounded text-sm"
+            >
+              Register as Recruiter
+            </Link>
+            <Link
+              to="/candidate/register"
+              className="text-green-600 hover:bg-green-50 border border-green-600 px-3 py-1 rounded text-sm"
+            >
+              Register as Job Seeker
+            </Link>
+          </div>
+        </div>
+
+        {/* Only show admin contact info on admin login page */}
+        {userType === 'admin' && (
+          <p className="text-center text-xs text-gray-500 mt-4">
+            Need admin access? Contact system administrator.
+          </p>
+        )}
       </form>
     </div>
   );

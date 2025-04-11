@@ -16,7 +16,7 @@ const HomePage = () => {
             <Link to="/candidate/register" className="bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
               For Job Seekers
             </Link>
-            <Link to="/login" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
+            <Link to="/login?type=admin" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
               Admin Portal
             </Link>
             
@@ -121,7 +121,7 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+              <Link to="/login?type=recruiter" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
                 Recruiter Login
               </Link>
             </div>
@@ -150,7 +150,7 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+              <Link to="/login?type=candidate" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
                 Job Seeker Login
               </Link>
             </div>
@@ -179,7 +179,7 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login" className="inline-block bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+              <Link to="/login?admin" className="inline-block bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
                 Admin Login
               </Link>
             </div>
