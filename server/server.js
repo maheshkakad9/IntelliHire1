@@ -4,7 +4,7 @@ import { app } from "./app.js"
 dotenv.config({
     path: './.env'
 })
-
+console.log("ENV test:", process.env.CLOUDINARY_CLOUD_NAME);
 connectDB()
 .then(() => {
     app.listen(process.env.PORT || 8000, () => {
