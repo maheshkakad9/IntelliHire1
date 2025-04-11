@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const createJob = asyncHandler(async (req,res) => {
-    const { title, description, skillsRequired, experienceRequired, location, salaryRange } = req.body;
+    const { title, description, skillsRequired, experienceRequired, location, salaryRange, experienceKeywords, degreeRequirements, prioritySkills} = req.body;
 
     const recruiterId = req.recruiter?._id || req.body.recruiterId;
 
@@ -17,6 +17,9 @@ const createJob = asyncHandler(async (req,res) => {
         description,
         skillsRequired,
         experienceRequired,
+        experienceKeywords,
+        degreeRequirements,
+        prioritySkills,  
         location,
         salaryRange,
         recruiterId
@@ -41,9 +44,37 @@ const getJobById = asyncHandler(async (req,res) => {
     if (!job) throw new ApiError(404, "Job not found");
     return res.status(200).json(new ApiResponse(200, job, "Job details fetched successfully"));
 })
+
+const searchJobs = async (req,res) => {
+    const { title, location, experience } = req.query;
+
+    let query = {};
+
+    if (title) {
+        query.title = { $regex: title, $options: "i" }; // Case-insensitive title search
+    }
+
+    if (location) {
+        query.location = { $regex: location, $options: "i" }; // Case-insensitive location search
+    }
+
+    if (experience) {
+        const experienceArray = experience.split(',').map(e => parseInt(e.trim()));
+        query.experienceRequired = { $in: experienceArray };
+    }
+
+    try {
+        const jobs = await Job.find(query);
+        res.status(200).json(jobs);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching jobs", error });
+    }
+};
+
 export {
     createJob,
     getAllJobs,
     getJobsByRecruiter,
-    getJobById
+    getJobById,
+    searchJobs
 }

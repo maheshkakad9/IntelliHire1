@@ -3,7 +3,8 @@ import {
     createJob,
     getAllJobs,
     getJobById,
-    getJobsByRecruiter
+    getJobsByRecruiter,
+    searchJobs
 } from "../controllers/job.controller.js";
 import {verifyRecruiterJWT} from "../middlewares/recruiter.middlewares.js"
 
@@ -13,8 +14,10 @@ const router = Router()
 router.route("/").post(verifyRecruiterJWT,createJob)
 
 //Public routes
+router.route("/search").get(searchJobs);
 router.route("/getAllJobs").get(getAllJobs);
 router.route("/:jobId").get(getJobById);
 router.route("/recruiter/:recruiterId").get(getJobsByRecruiter);
+
 
 export default router
