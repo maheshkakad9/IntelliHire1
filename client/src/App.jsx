@@ -5,6 +5,7 @@ import JobSeekerRegisterPage from './pages/JobSeekerRegisterPage';
 import RecruiterRegisterPage from './pages/RecruiterRegisterPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import JobSeekerDashboardPage from './pages/JobSeekerDashboardPage';
+import RecruiterDashboardPage from './pages/RecruiterDashboardPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/candidate/dashboard" element={<JobSeekerDashboardPage />} />
         
+        <Route path="/recruiter/dashboard" element={<RecruiterDashboardPage />} />
       </Routes>
     </Router>
   );
