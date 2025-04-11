@@ -1,76 +1,78 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const JobSeekerRegister = ({ onRegister }) => {
+const JobSeekerRegister = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [location, setLocation] = useState('');
-  const [skills, setSkills] = useState('');
-  const [experience, setExperience] = useState('');
-  const [education, setEducation] = useState('');
-  // Removed resumeFile state
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    location: '',
+    skills: '',
+    experience: '',
+    education: '',
+  });
+
+  const [profilePic, setProfilePic] = useState(null);
+  const [resumeFile, setResumeFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleChange = e => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e, setter) => {
+    setter(e.target.files[0]);
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
+    const {
+      name, email, password, confirmPassword,
+      phone, location, skills, experience, education,
+    } = formData;
+
     if (password !== confirmPassword) {
       alert("Passwords don't match");
       return;
     }
-    
-    setIsSubmitting(true);
-    
+
+    const skillsArray = skills.split(',').map(s => s.trim()).filter(Boolean);
+
+    const data = new FormData();
+    data.append('name', name);
+    data.append('email', email);
+    data.append('password', password);
+    data.append('phone', phone);
+    data.append('location', location);
+    data.append('skills', JSON.stringify(skillsArray));
+    data.append('experience', experience);
+    data.append('education', education);
+    if (resumeFile) data.append('resume', resumeFile);
+    if (profilePic) data.append('profilePic', profilePic);
+
     try {
-      // Format the skills as an array
-      const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill);
-      
-      // Create FormData for API submission
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('password', password);
-      formData.append('phone', phone);
-      formData.append('location', location);
-      formData.append('skills', JSON.stringify(skillsArray));
-      formData.append('experience', experience);
-      formData.append('education', education);
-      
-      // Removed resume append section
-      
-      // Call register API with the form data
-      await onRegister(formData);
-      
-      // Create a user object to pass to the dashboard
-      const userData = {
-        name,
-        email,
-        phone,
-        location,
-        skills: skillsArray,
-        experience,
-        education,
-        resumeUrl: null, // Set to null since we're not uploading a resume
-        profilePicUrl: null // Default profile pic will be used
-      };
-      
-      // Store user data in localStorage for persistence across page refreshes
-      localStorage.setItem('userData', JSON.stringify(userData));
-      
-      // Redirect to the jobseeker dashboard
-      navigate('/candidate/dashboard');
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert('Registration failed. Please try again.');
+      setIsSubmitting(true);
+      await axios.post(`${API_URL}/api/v1/users/register`, data, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      alert("Registration successful!");
+      navigate('/login?type=user');
+    } catch (err) {
+      console.error('Registration error:', err);
+      alert("Registration failed.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Removed handleResumeChange function
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -79,181 +81,58 @@ const JobSeekerRegister = ({ onRegister }) => {
         className="w-full max-w-lg bg-white p-8 rounded-lg shadow-lg my-8"
       >
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Create Job Seeker Account</h2>
-        
-        <div className="mb-4">
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Full Name*
-          </label>
-          <input
-            id="name"
-            type="text"
-            placeholder="Enter your full name"
-            value={name}
-            required
-            onChange={e => setName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Email*
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            required
-            onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+        {/* Name */}
+        <Input label="Full Name*" name="name" value={formData.name} onChange={handleChange} required />
 
+        {/* Email */}
+        <Input label="Email*" name="email" type="email" value={formData.email} onChange={handleChange} required />
+
+        {/* Password */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="mb-4">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Password*
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Create a password"
-              value={password}
-              required
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Confirm Password*
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              required
-              onChange={e => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+          <Input label="Password*" name="password" type="password" value={formData.password} onChange={handleChange} required />
+          <Input label="Confirm Password*" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
         </div>
 
+        {/* Phone & Location */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="mb-4">
-            <label
-              htmlFor="phone"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Phone
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              placeholder="Your phone number"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="location"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Location
-            </label>
-            <input
-              id="location"
-              type="text"
-              placeholder="City, State"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+          <Input label="Phone*" name="phone" value={formData.phone} onChange={handleChange} required />
+          <Input label="Location" name="location" value={formData.location} onChange={handleChange} />
         </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="skills"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Skills (comma-separated)*
-          </label>
-          <input
-            id="skills"
-            type="text"
-            placeholder="JavaScript, React, Node.js"
-            value={skills}
-            required
-            onChange={e => setSkills(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+        {/* Skills */}
+        <Input label="Skills (comma-separated)*" name="skills" value={formData.skills} onChange={handleChange} required />
 
+        {/* Experience & Education */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input label="Experience (Years)" name="experience" type="number" value={formData.experience} onChange={handleChange} />
           <div className="mb-4">
-            <label
-              htmlFor="experience"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Years of Experience
-            </label>
-            <input
-              id="experience"
-              type="number"
-              min="0"
-              max="50"
-              placeholder="Years of experience"
-              value={experience}
-              onChange={e => setExperience(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="education"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Highest Education*
-            </label>
+            <label htmlFor="education" className="block text-sm font-medium text-gray-700 mb-1">Highest Education*</label>
             <select
               id="education"
-              value={education}
+              name="education"
+              value={formData.education}
               required
-              onChange={e => setEducation(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select your highest education</option>
-              <option value="High School">High School</option>
-              <option value="Associate's Degree">Associate's Degree</option>
-              <option value="Bachelor's Degree">Bachelor's Degree</option>
-              <option value="Master's Degree">Master's Degree</option>
-              <option value="Doctorate">Doctorate</option>
+              <option value="">Select</option>
+              <option>High School</option>
+              <option>Associate's Degree</option>
+              <option>Bachelor's Degree</option>
+              <option>Master's Degree</option>
+              <option>Doctorate</option>
             </select>
           </div>
         </div>
 
-        {/* Removed resume upload section completely */}
+        {/* Profile Picture */}
+        <FileInput label="Profile Picture (optional)" accept="image/*" onChange={e => handleFileChange(e, setProfilePic)} />
 
+        {/* Resume */}
+        <FileInput label="Resume (optional)" accept=".pdf,.doc,.docx" onChange={e => handleFileChange(e, setResumeFile)} />
+
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
@@ -261,29 +140,40 @@ const JobSeekerRegister = ({ onRegister }) => {
         >
           {isSubmitting ? 'Registering...' : 'Register as Job Seeker'}
         </button>
-        
+
+        {/* Links */}
         <p className="text-center text-sm text-gray-600 mt-4">
-          Already have an account?{' '}
-          <Link
-            to="/login"
-            className="text-blue-500 hover:underline"
-          >
-            Login
-          </Link>
+          Already have an account? <Link to="/login?type=user" className="text-blue-500 hover:underline">Login</Link>
         </p>
-        
         <p className="text-center text-sm text-gray-500 mt-2">
-          Are you a recruiter?{' '}
-          <Link
-            to="/recruiter/register"
-            className="text-blue-500 hover:underline"
-          >
-            Register as Recruiter
-          </Link>
+          Are you a recruiter? <Link to="/recruiter/register" className="text-blue-500 hover:underline">Register as Recruiter</Link>
         </p>
       </form>
     </div>
   );
 };
+
+const Input = ({ label, ...props }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      {...props}
+    />
+  </div>
+);
+
+const FileInput = ({ label, accept, onChange }) => (
+  <div className="mb-6">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input
+      type="file"
+      accept={accept}
+      onChange={onChange}
+      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+    <p className="text-xs text-gray-500 mt-1">Supported formats: {accept}</p>
+  </div>
+);
 
 export default JobSeekerRegister;
