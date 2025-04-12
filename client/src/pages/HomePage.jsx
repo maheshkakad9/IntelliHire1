@@ -7,7 +7,7 @@ const HomePage = () => {
       {/* Hero Section */}
       <header className="bg-blue-600 text-white py-16">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">AI-Powered Resume Screening Assistant</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">IntelliHire – AI-Powered Resume Evaluation and Job Portal</h1>
           <p className="text-xl md:text-2xl mb-8">Streamline your hiring process with our intelligent resume analysis tool</p>
           <div className="flex flex-wrap gap-4">
             <Link to="/recruiter/register" className="bg-white text-blue-600 hover:bg-blue-100 px-6 py-3 rounded-lg font-semibold transition duration-300">

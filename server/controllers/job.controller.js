@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const createJob = asyncHandler(async (req,res) => {
-    const { title, description, skillsRequired, experienceRequired, location, salaryRange, experienceKeywords, degreeRequirements, prioritySkills} = req.body;
+    const { title, description, skillsRequired, experienceRequired, location, salaryRange, experienceKeywords, prioritySkills} = req.body;
 
     const recruiterId = req.recruiter?._id || req.body.recruiterId;
 
@@ -18,7 +18,6 @@ const createJob = asyncHandler(async (req,res) => {
         skillsRequired,
         experienceRequired,
         experienceKeywords,
-        degreeRequirements,
         prioritySkills,  
         location,
         salaryRange,
@@ -35,7 +34,12 @@ const getAllJobs = asyncHandler(async (req,res) => {
 
 const getJobsByRecruiter = asyncHandler(async (req,res) => {
     const recruiterId = req.params.recruiterId;
-    const jobs = await Job.find({ recruiterId }).populate("recruiterId", "name companyName");
+    const jobs = await Job.find({ recruiterId }).populate("recruiterId", "name companyName")
+                                                .populate({
+                                                    path: "applicants.userId",
+                                                    select: "name email phone resumeUrl profilePicUrl skills experience education",
+                                                    model: "User"
+                                                })
     return res.status(200).json(new ApiResponse(200, jobs, "Jobs by recruiter fetched successfully"));
 })
 

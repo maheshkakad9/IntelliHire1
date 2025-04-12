@@ -41,7 +41,7 @@ const Login = () => {
       if (response.status === 200) {
         // Navigate to respective dashboard
         if (userType === 'recruiter') {
-          navigate('/recruiter/dashboard');
+          navigate('/recruiter/jobs');
         } else if (userType === 'user') {
           navigate('/candidate/dashboard');
         }

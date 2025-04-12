@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDeleteJobPosting }) => {
   const [isAddingJob, setIsAddingJob] = useState(false);
@@ -10,9 +12,38 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
     skillsRequired: '',
     experienceRequired: '',
     salaryRange: '',
+    prioritySkills: '',
+    experienceKeywords: '',
     isRemote: false,
     employmentType: 'Full-Time'
   });
+  const [recruiterId, setRecruiterId] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Fetch recruiter profile when component mounts
+  useEffect(() => {
+    const fetchRecruiterProfile = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/recruiter/profile`,
+          { withCredentials: true }
+        );
+        console.log(response.data.data);
+        setRecruiterId(response.data.data._id);
+      } catch (error) {
+        console.error('Error fetching recruiter profile:', error);
+        if (error.response?.status === 401) {
+          navigate('/login?recruiter');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecruiterProfile();
+  }, [navigate]);
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,47 +53,103 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
     });
   };
 
-  const handleSubmitNewJob = (e) => {
+  const handleSubmitNewJob = async (e) => {
     e.preventDefault();
     
-    // Format skills as array
-    const formattedJob = {
-      ...newJob,
-      skillsRequired: newJob.skillsRequired.split(',').map(skill => skill.trim()).filter(Boolean)
-    };
-    
-    if (editingJobId) {
-      onUpdateJobPosting({ ...formattedJob, id: editingJobId });
-      setEditingJobId(null);
-    } else {
-      onAddJobPosting(formattedJob);
+    try {
+      // Format the job data according to backend requirements
+      const formattedJob = {
+        title: newJob.title,
+        description: newJob.description,
+        location: newJob.location,
+        skillsRequired: newJob.skillsRequired.split(',').map(skill => skill.trim()).filter(Boolean),
+        prioritySkills: newJob.prioritySkills.split(',').map(skill => skill.trim()).filter(Boolean),
+        experienceKeywords: newJob.experienceKeywords.split(',').map(kw => kw.trim()).filter(Boolean),
+        experienceRequired: parseInt(newJob.experienceRequired) || 0,
+        salaryRange: newJob.salaryRange,
+        isRemote: newJob.isRemote,
+        employmentType: newJob.employmentType,
+        recruiterId: recruiterId
+      };
+
+      if (editingJobId) {
+        // Update existing job
+        const response = await axios.put(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/job/${editingJobId}`,
+          formattedJob,
+          { withCredentials: true }
+        );
+        onUpdateJobPosting(response.data.data);
+        setEditingJobId(null);
+      } else {
+        // Create new job
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/job`,
+          formattedJob,
+          { withCredentials: true }
+        );
+        onAddJobPosting(response.data.data);
+      }
+
+
+      setIsAddingJob(false);
+      setNewJob({
+        title: '',
+        location: '',
+        description: '',
+        skillsRequired: '',
+        experienceRequired: '',
+        salaryRange: '',
+        prioritySkills: '',
+        experienceKeywords: '',
+        isRemote: false,
+        employmentType: 'Full-Time'
+      });
+      
+    } catch (error) {
+      console.error('Error saving job:', error);
+      if (error.response?.status === 401) {
+        alert('Session expired - please login again');
+        navigate('/login?recruiter');
+      } else {
+        alert('Error saving job: ' + (error.message || 'Please try again'));
+      }
     }
-    
-    setIsAddingJob(false);
-    setNewJob({
-      title: '',
-      location: '',
-      description: '',
-      skillsRequired: '',
-      experienceRequired: '',
-      salaryRange: '',
-      isRemote: false,
-      employmentType: 'Full-Time'
-    });
   };
 
   const handleEditJob = (job) => {
-    setEditingJobId(job.id);
+    setEditingJobId(job._id);
     setNewJob({
-      ...job,
-      skillsRequired: job.skillsRequired.join(', ')
+      title: job.title,
+      location: job.location,
+      description: job.description,
+      skillsRequired: job.skillsRequired.join(', '),
+      prioritySkills: job.prioritySkills?.join(', ') || '',
+      experienceKeywords: job.experienceKeywords?.join(', ') || '',
+      experienceRequired: job.experienceRequired?.toString() || '',
+      salaryRange: job.salaryRange || '',
+      isRemote: job.isRemote || false,
+      employmentType: job.employmentType || 'Full-Time'
     });
     setIsAddingJob(true);
   };
 
-  const handleDeleteJob = (jobId) => {
+  const handleDeleteJob = async (jobId) => {
     if (window.confirm('Are you sure you want to delete this job posting?')) {
-      onDeleteJobPosting(jobId);
+      try {
+        await axios.delete(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/job/${jobId}`,
+          { withCredentials: true }
+        );
+        onDeleteJobPosting(jobId);
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        } else {
+          alert('Error deleting job: ' + (error.message || 'Please try again'));
+        }
+      }
     }
   };
 
@@ -186,6 +273,36 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
                 </div>
 
                 <div className="sm:col-span-2">
+                  <label htmlFor="prioritySkills" className="block text-sm font-medium text-gray-700">Priority Skills (comma separated)</label>
+                  <div className="mt-1">
+                    <input
+                      type="text"
+                      name="prioritySkills"
+                      id="prioritySkills"
+                      placeholder="e.g., React, Node.js"
+                      value={newJob.prioritySkills}
+                      onChange={handleInputChange}
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label htmlFor="experienceKeywords" className="block text-sm font-medium text-gray-700">Experience Keywords (comma separated)</label>
+                  <div className="mt-1">
+                    <input
+                      type="text"
+                      name="experienceKeywords"
+                      id="experienceKeywords"
+                      placeholder="e.g., React project, built full stack application"
+                      value={newJob.experienceKeywords}
+                      onChange={handleInputChange}
+                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">Job Description*</label>
                   <div className="mt-1">
                     <textarea
@@ -233,6 +350,8 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
                       skillsRequired: '',
                       experienceRequired: '',
                       salaryRange: '',
+                      prioritySkills: '',
+                      experienceKeywords: '',
                       isRemote: false,
                       employmentType: 'Full-Time'
                     });
@@ -279,7 +398,7 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
       ) : (
         <div className="space-y-5">
           {jobPostings.map((job) => (
-            <div key={job.id} className="bg-white shadow overflow-hidden rounded-lg">
+            <div key={job._id} className="bg-white shadow overflow-hidden rounded-lg">
               <div className="px-4 py-5 sm:px-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                   <div className="flex-grow">
@@ -293,7 +412,7 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
                   </div>
                   <div className="mt-4 sm:mt-0 flex items-center">
                     <span className="mr-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {job.applications?.length || 0} Applicant{job.applications?.length !== 1 ? 's' : ''}
+                      {job.applicants?.length || 0} Applicant{job.applicants?.length !== 1 ? 's' : ''}
                     </span>
                     <div className="flex">
                       <button
@@ -303,7 +422,7 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDeleteJob(job.id)}
+                        onClick={() => handleDeleteJob(job._id)}
                         className="text-red-600 hover:text-red-900"
                       >
                         Delete
@@ -317,15 +436,34 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
                 </div>
                 
                 {job.skillsRequired && job.skillsRequired.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {job.skillsRequired.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">Skills Required:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {job.skillsRequired.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {job.prioritySkills && job.prioritySkills.length > 0 && (
+                  <div className="mt-2">
+                    <h4 className="text-sm font-medium text-gray-700 mb-1">Priority Skills:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {job.prioritySkills.map((skill, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
                 
@@ -333,9 +471,7 @@ const JobPostingList = ({ jobPostings, onAddJobPosting, onUpdateJobPosting, onDe
                   <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span>Posted {new Date(job.postedAt).toLocaleDateString()}</span>
-                  <span className="mx-2">•</span>
-                  <span>{job.views || 0} views</span>
+                  <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>

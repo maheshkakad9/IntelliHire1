@@ -21,11 +21,6 @@ const jobSchema = new Schema(
               type: String
             }
         ],
-        degreeRequirements: [
-            {
-              type: String
-            }
-        ],
         prioritySkills: [
             {
               type: String

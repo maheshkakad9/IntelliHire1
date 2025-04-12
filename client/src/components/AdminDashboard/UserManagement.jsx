@@ -14,7 +14,7 @@ const UserManagement = () => {
       try {
         // Update the API URL to fetch pending recruiters
         const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/admin/pending-recruiters`);
-        
+         
         if (response.data?.data) {
           setRecruiterRequests(response.data.data);
         } else {

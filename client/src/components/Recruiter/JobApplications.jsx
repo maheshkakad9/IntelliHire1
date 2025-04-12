@@ -1,15 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
-  const [selectedJobId, setSelectedJobId] = useState(jobPostings.length > 0 ? jobPostings[0].id : null);
+  const [selectedJobId, setSelectedJobId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
   const [isViewingResume, setIsViewingResume] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [jobs, setJobs] = useState([]);
 
-  const selectedJob = jobPostings.find(job => job.id === selectedJobId) || {};
-  const applications = selectedJob.applications || [];
+  // Fetch recruiter's jobs with applicants on component mount
+  useEffect(() => {
+    const fetchRecruiterJobs = async () => {
+      setLoading(true);
+      try {
+        // Get recruiterId from localStorage or session
+        const recruiterData = JSON.parse(localStorage.getItem('recruiterData') || '{}');
+        const recruiterId = recruiterData._id;
+        
+        if (!recruiterId) {
+          console.error('No recruiter ID found');
+          setLoading(false);
+          return;
+        }
+
+        const response = await axios.get(`http://localhost:8000/api/v1/job/recruiter/${recruiterId}`, {
+          withCredentials: true
+        });
+        
+        const jobsWithApplicants = response.data.data || [];
+        setJobs(jobsWithApplicants);
+        
+        // Set default selected job if there are jobs
+        if (jobsWithApplicants.length > 0 && !selectedJobId) {
+          setSelectedJobId(jobsWithApplicants[0]._id);
+        }
+      } catch (error) {
+        console.error('Error fetching recruiter jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecruiterJobs();
+  }, []);
+
+  // Find currently selected job
+  const selectedJob = selectedJobId ? 
+    jobs.find(job => job._id === selectedJobId) || {} : 
+    {};
+    
+  // Get applications from the selected job
+  const applications = selectedJob.applicants?.map(app => ({
+    id: app._id || app.userId._id,
+    candidateName: app.userId?.name || 'Candidate',
+    candidateEmail: app.userId?.email || 'No email provided',
+    matchScore: app.score || 0,
+    status: app.status || 'Applied',
+    appliedDate: app.appliedAt || selectedJob.createdAt,
+    resumeUrl: app.userId?.resumeUrl || null,
+    breakdown: app.breakdown || {}
+  })) || [];
 
   // Filter applications
   const filteredApplications = applications.filter(app => {
@@ -38,8 +91,39 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
     return 0;
   });
 
-  const handleStatusChange = (applicationId, newStatus) => {
-    onUpdateApplicationStatus(selectedJobId, applicationId, newStatus);
+  // Handle status change with real API call
+  const handleStatusChange = async (applicationId, newStatus) => {
+    if (!selectedJobId) return;
+    
+    try {
+      // Update in the backend
+      await axios.patch(`http://localhost:8000/api/v1/job/${selectedJobId}/application/${applicationId}/status`, 
+        { status: newStatus },
+        { withCredentials: true }
+      );
+      
+      // Update local state
+      setJobs(prevJobs => prevJobs.map(job => {
+        if (job._id === selectedJobId) {
+          const updatedApplicants = job.applicants.map(app => 
+            (app._id === applicationId || app.userId._id === applicationId) 
+              ? {...app, status: newStatus} 
+              : app
+          );
+          return {...job, applicants: updatedApplicants};
+        }
+        return job;
+      }));
+      
+      // If we're viewing this application, update it
+      if (selectedApplication && (selectedApplication.id === applicationId)) {
+        setSelectedApplication({...selectedApplication, status: newStatus});
+      }
+      
+    } catch (error) {
+      console.error('Error updating application status:', error);
+      alert('Failed to update status. Please try again.');
+    }
   };
 
   const viewResume = (application) => {
@@ -59,6 +143,7 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown date';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
@@ -72,6 +157,14 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
     hired: applications.filter(app => app.status === 'Hired').length,
     rejected: applications.filter(app => app.status === 'Rejected').length
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -112,7 +205,7 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
                       <div>
                         <span className="font-medium text-gray-500">Match Score:</span>
                         <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {selectedApplication.matchScore || "85"}%
+                          {selectedApplication.matchScore}%
                         </span>
                       </div>
                       <div>
@@ -121,6 +214,20 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
                           {selectedApplication.status}
                         </span>
                       </div>
+                      
+                      {selectedApplication.breakdown && (
+                        <div className="mt-4">
+                          <h4 className="font-medium text-gray-700 mb-2">Score Breakdown</h4>
+                          <ul className="space-y-1 text-xs">
+                            {Object.entries(selectedApplication.breakdown).map(([key, value]) => (
+                              <li key={key} className="flex justify-between">
+                                <span className="capitalize">{key.replace('_score', '')}</span>
+                                <span className="font-medium">{Math.round(value * 100)}%</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="mt-6">
@@ -139,9 +246,16 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
                     </div>
                     
                     <div className="mt-6 space-y-3">
-                      <button className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                        Download Resume
-                      </button>
+                      {selectedApplication.resumeUrl && (
+                        <a 
+                          href={selectedApplication.resumeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                        >
+                          Download Resume
+                        </a>
+                      )}
                       <button className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Schedule Interview
                       </button>
@@ -191,9 +305,10 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
                 value={selectedJobId || ''}
                 onChange={(e) => setSelectedJobId(e.target.value)}
               >
-                {jobPostings.map(job => (
-                  <option key={job.id} value={job.id}>
-                    {job.title} ({job.applications?.length || 0} applications)
+                <option value="">Select a job</option>
+                {jobs.map(job => (
+                  <option key={job._id} value={job._id}>
+                    {job.title} ({job.applicants?.length || 0} applications)
                   </option>
                 ))}
               </select>
@@ -234,7 +349,9 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
       {selectedJobId && (
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-medium text-gray-900">Applications for {selectedJob.title}</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Applications for {selectedJob.title || 'Selected Job'}
+            </h3>
           </div>
           
           {applications.length === 0 ? (
@@ -325,11 +442,11 @@ const JobApplications = ({ jobPostings, onUpdateApplicationStatus }) => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-900 mr-2">{application.matchScore || "85"}%</span>
+                            <span className="text-sm font-medium text-gray-900 mr-2">{application.matchScore}%</span>
                             <div className="w-16 bg-gray-200 rounded-full h-2">
                               <div 
                                 className="bg-green-600 h-2 rounded-full" 
-                                style={{width: `${application.matchScore || 85}%`}}
+                                style={{width: `${application.matchScore}%`}}
                               ></div>
                             </div>
                           </div>
