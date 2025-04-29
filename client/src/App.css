@@ -1,0 +1,9 @@
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+.scrollable-section {
+    height: 100vh;
+    overflow-y: auto;
+}

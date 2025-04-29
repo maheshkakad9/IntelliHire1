@@ -110,7 +110,7 @@ const loginRecruiter = asyncHandler(async (req,res) => {
     const loggedInRecruiter = await Recruiter.findById(recruiter._id).select("-password -refreshToken");
 
     const options = {
-        httpOnly: true,
+        // httpOnly: true,
         secure: true
     };
 
@@ -167,7 +167,7 @@ const refreshAccessTokenRecruiter = asyncHandler(async (req,res) => {
         }
 
         const options = {
-            httpOnly: true,
+            // httpOnly: true,
             secure: true
         };
 

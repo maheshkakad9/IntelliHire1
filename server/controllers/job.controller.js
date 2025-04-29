@@ -28,7 +28,7 @@ const createJob = asyncHandler(async (req,res) => {
 });
 
 const getAllJobs = asyncHandler(async (req,res) => {
-    const jobs = await Job.find().populate("recruiterId", "name companyName");
+    const jobs = await Job.find().populate("recruiterId", "name companyName profilePicUrl");
     return res.status(200).json(new ApiResponse(200, jobs, "Jobs fetched successfully"));
 })
 
@@ -44,7 +44,7 @@ const getJobsByRecruiter = asyncHandler(async (req,res) => {
 })
 
 const getJobById = asyncHandler(async (req,res) => {
-    const job = await Job.findById(req.params.jobId).populate("recruiterId", "name companyName");
+    const job = await Job.findById(req.params.jobId).populate("recruiterId", "name companyName profilePicUrl");
     if (!job) throw new ApiError(404, "Job not found");
     return res.status(200).json(new ApiResponse(200, job, "Job details fetched successfully"));
 })

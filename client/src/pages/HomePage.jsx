@@ -1,25 +1,89 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
+import Cookies  from 'js-cookie'; 
 
 const HomePage = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = Cookies.get('accessToken');
+    
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded && decoded.userType) {
+          setIsLoggedIn(true);
+          setUserType(decoded.userType);
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
+        setIsLoggedIn(false);
+      }
+    }
+  }, []);
+
+  const handleGoToDashboard = () => {
+    if (userType === 'recruiter') {
+      navigate('/recruiter/jobs');
+    } else if (userType === 'user') {
+      navigate('/candidate/dashboard');
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    setIsLoggedIn(false);
+    setUserType('');
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Hero Section */}
       <header className="bg-blue-600 text-white py-16">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">IntelliHire – AI-Powered Resume Evaluation and Job Portal</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">IntelliHire – AI-Powered Resume Evaluation and Job Portal</h1>
           <p className="text-xl md:text-2xl mb-8">Streamline your hiring process with our intelligent resume analysis tool</p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/recruiter/register" className="bg-white text-blue-600 hover:bg-blue-100 px-6 py-3 rounded-lg font-semibold transition duration-300">
-              For Recruiters
-            </Link>
-            <Link to="/candidate/register" className="bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
-              For Job Seekers
-            </Link>
-            <Link to="/login?type=admin" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
-              Admin Portal
-            </Link>
-            
+            {isLoggedIn ? (
+              <>
+                <button 
+                  onClick={handleGoToDashboard}
+                  className="bg-white text-blue-600 hover:bg-blue-100 px-6 py-3 rounded-lg font-semibold transition duration-300"
+                >
+                  Go to Dashboard
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                {userType !== 'recruiter' && (
+                  <Link to="/recruiter/register" className="bg-white text-blue-600 hover:bg-blue-100 px-6 py-3 rounded-lg font-semibold transition duration-300">
+                    For Recruiters
+                  </Link>
+                )}
+                {userType !== 'user' && (
+                  <Link to="/candidate/register" className="bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
+                    For Job Seekers
+                  </Link>
+                )}
+                <Link to="/login?type=admin" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300">
+                  Admin Portal
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -121,9 +185,18 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login?type=recruiter" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
-                Recruiter Login
-              </Link>
+              {userType === 'recruiter' ? (
+                <button 
+                  onClick={handleGoToDashboard}
+                  className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <Link to="/login?type=recruiter" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+                  {isLoggedIn ? 'Switch to Recruiter' : 'Recruiter Login'}
+                </Link>
+              )}
             </div>
           </div>
           
@@ -150,9 +223,18 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login?type=user" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
-                Job Seeker Login
-              </Link>
+              {userType === 'user' ? (
+                <button 
+                  onClick={handleGoToDashboard}
+                  className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300"
+                >
+                  Go to Dashboard
+                </button>
+              ) : (
+                <Link to="/login?type=user" className="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+                  {isLoggedIn ? 'Switch to Job Seeker' : 'Job Seeker Login'}
+                </Link>
+              )}
             </div>
           </div>
           
@@ -179,7 +261,7 @@ const HomePage = () => {
               </li>
             </ul>
             <div className="mt-6">
-              <Link to="/login?admin" className="inline-block bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+              <Link to="/login?type=admin" className="inline-block bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
                 Admin Login
               </Link>
             </div>
@@ -193,12 +275,23 @@ const HomePage = () => {
           <h2 className="text-3xl font-bold mb-6">Ready to Streamline Your Hiring Process?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">Join thousands of companies using our AI resume screening assistant to find the best talent faster.</p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/register" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-semibold text-lg transition duration-300">
-              Get Started Free
-            </Link>
-            <Link to="/demo" className="bg-transparent border-2 border-white hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition duration-300">
-              Request Demo
-            </Link>
+            {isLoggedIn ? (
+              <button 
+                onClick={handleGoToDashboard}
+                className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-semibold text-lg transition duration-300"
+              >
+                Go to Dashboard
+              </button>
+            ) : (
+              <>
+                <Link to="/register" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-semibold text-lg transition duration-300">
+                  Get Started Free
+                </Link>
+                <Link to="/demo" className="bg-transparent border-2 border-white hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition duration-300">
+                  Request Demo
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

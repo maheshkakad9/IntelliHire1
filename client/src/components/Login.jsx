@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,7 @@ const Login = () => {
       // Admin hardcoded login
       if (userType === 'admin' && email === 'admin@gmail.com' && password === 'admin123') {
         navigate('/admin/dashboard');
+        toast("Admin login successfull!");
         return;
       }
 
@@ -41,9 +43,11 @@ const Login = () => {
       if (response.status === 200) {
         // Navigate to respective dashboard
         if (userType === 'recruiter') {
-          navigate('/recruiter/jobs');
+          navigate('/recruiter/jobs',{ replace: true });
+          toast("Recruiter login Successfull !!!");
         } else if (userType === 'user') {
           navigate('/candidate/dashboard');
+          toast("User login Successfull !!!");
         }
       }
     } catch (err) {

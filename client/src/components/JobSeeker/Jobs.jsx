@@ -1,71 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import JobApplicationModal from './JobApplicationModal';
+import { useGetAllJobsQuery, 
+         useSearchJobsQuery,
+         useGetJobByIdQuery 
+} from '../../../store/api/jobsApi'; 
 
 const Jobs = ({ user, onUpdateAppliedJobs }) => {
   const [activeTab, setActiveTab] = useState('recommended');
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ title: '', location: '', experience: '' });
+  const [searchParams, setSearchParams] = useState(null);
+  const [selectedJobId, setSelectedJobId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchJobs = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get('http://localhost:8000/api/v1/job/getAllJobs');
-      const data = Array.isArray(response.data.data) ? response.data.data : [];
-      console.log("Fetched jobs: ", response.data);
-      setJobs(data);
-    } catch (err) {
-      console.error('Error fetching jobs:', err);
-      setJobs([]); // fallback
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: allJobsData, isLoading:isAllJobsLoading } = useGetAllJobsQuery();
+  console.log("All Jobs Data",allJobsData);
+  const { data: searchedJobs, isLoading: isSearching } = useSearchJobsQuery(searchParams, {
+    skip: !searchParams,
+  });
 
-  const searchJobs = async () => {
-    setLoading(true);
-    try {
-      const { title, location, experience } = filters;
-      console.log("Searching with:", {
-        title: filters.title,
-        location: filters.location,
-        experience: filters.experience
-      });
-      const response = await axios.get(`http://localhost:8000/api/v1/job/search`, {
-        params: { title, location, experience }
-      });
-      const data = Array.isArray(response.data.data) ? response.data.data : [];
-      console.log('Searched jobs: ', data);
-      setJobs(data);
-    } catch (err) {
-      console.error('Error searching jobs:', err);
-      setJobs([]); // fallback
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: jobDetail, isLoading: isJobLoading } = useGetJobByIdQuery(selectedJobId, {
+    skip: !selectedJobId,
+  });
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
+  console.log("jobDetails",jobDetail);
+  const searchJobs = () => {
+    const { title, location, experience } = filters;
+    const params = {
+      ...(title && { title }),
+      ...(location && { location }),
+      ...(experience && { experience }), // optional: support comma-separated string
+    };
+    setSearchParams(params);
+  }; 
 
-  const handleApplyForJob = async (jobId, resumeUrl) => {
-    if (user.appliedJobs.some(j => j.id === jobId)) {
+  const jobs = searchParams ? searchedJobs || [] : allJobsData?.data || [];
+  const loading = searchParams ? isSearching : isAllJobsLoading;
+
+  const handleApplyForJob = async (job, resumeUrl) => {
+    if (user.appliedJobs.some(j => j.id === job._id)) {
       alert("You've already applied to this job");
       return;
     }
 
-    try {
-      const response = await axios.get(`http://localhost:8000/api/v1/job/${jobId}`);
-      const job = response.data;
-
       const updatedAppliedJobs = [...user.appliedJobs, {
-        id: jobId,
-        title: job.title,
-        company: job.company,
-        logo: job.logo,
+        id: jobDetail.data._id,
+        title: jobDetail.data.title,
+        company: jobDetail.data.recruiterId.companyName,
+        logo: jobDetail.data.logo,
         appliedDate: new Date().toISOString(),
         status: 'Applied',
         resumeUrl
@@ -73,9 +54,8 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
 
       onUpdateAppliedJobs(updatedAppliedJobs);
       alert('Application submitted successfully!');
-    } catch (err) {
-      console.error('Error applying for job:', err);
-    }
+      setIsModalOpen(false);
+      setSelectedJobId(null);
   };
 
   const handleInputChange = (e) => {
@@ -83,9 +63,19 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleJobSelect = (jobId) => {
+    setSelectedJobId(jobId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedJobId(null);
+  };
+
 
   return (
-    <>
+    <> 
       {/* Search bar */}
       <div className="bg-white shadow rounded-lg mb-5">
         <div className="px-4 py-5 sm:p-6">
@@ -199,11 +189,11 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
           </div>
         ) : (
           jobs.map((job) => (
-            <div key={job.id} className="bg-white shadow overflow-hidden rounded-lg">
+            <div key={job._id} className="bg-white shadow overflow-hidden rounded-lg">
               <div className="px-4 py-5 sm:px-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 h-12 w-12">
-                    <img className="h-12 w-12 rounded-md" src={job.logo} alt={job.company} />
+                    <img className="h-12 w-12 rounded-md" src={job.recruiterId.profilePicUrl} alt={job.company} />
                   </div>
                   <div className="ml-4 flex-1">
                     <div className="flex items-center justify-between">
@@ -258,11 +248,11 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
                       <div className="flex space-x-3">
                         <button
                           type="button"
-                          onClick={() => setSelectedJob(job)}
+                          onClick={() => handleJobSelect(job._id)}
                           className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          disabled={user.appliedJobs.some(j => j.id === job.id)}
+                          disabled={user.appliedJobs.some(j => j.id === job._id)}
                         >
-                          {user.appliedJobs.some(j => j.id === job.id) ? 'Applied' : 'Apply Now'}
+                          {user.appliedJobs.some(j => j.id === job._id) ? 'Applied' : 'Apply Now'}
                         </button>
                         <button
                           type="button"
@@ -289,11 +279,11 @@ const Jobs = ({ user, onUpdateAppliedJobs }) => {
         </div>
 
         {/* Job Application Modal */}
-        {selectedJob && (
+        {isModalOpen && jobDetail && (
           <JobApplicationModal 
-            job={selectedJob}
+            job={jobDetail.data}
             user={user}
-            onClose={() => setSelectedJob(null)}
+            onClose={handleCloseModal}
             onApply={handleApplyForJob}
           />
         )}

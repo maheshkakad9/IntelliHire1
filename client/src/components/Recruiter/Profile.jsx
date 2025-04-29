@@ -1,33 +1,60 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  useGetRecruiterProfileQuery, 
+  // useUpdateRecruiterProfileMutation 
+} from '../../../store/api/recruiterApi';
+import { toast } from 'react-hot-toast';
 
-const Profile = ({ recruiter, onUpdateProfile, isEditing, setIsEditing, onFinishEditing }) => {
-  const [editedRecruiter, setEditedRecruiter] = useState({...recruiter});
+const Profile = ({ isEditing, setIsEditing, onFinishEditing }) => {
+  // Fetch profile data using RTK Query
+  const { data: profileData, isLoading, isError, refetch } = useGetRecruiterProfileQuery();
+  // const [updateProfile] = useUpdateRecruiterProfileMutation();
   
-  // Update editedRecruiter when recruiter changes
+  const [recruiter, setRecruiter] = useState(null);
+  const [editedRecruiter, setEditedRecruiter] = useState(null);
+
+  // Initialize data when fetched
   useEffect(() => {
-    setEditedRecruiter({...recruiter});
-  }, [recruiter]);
-  
-  const handleSaveProfile = () => {
-    onUpdateProfile(editedRecruiter);
-    if (setIsEditing) {
-      setIsEditing(false);
-    } else if (onFinishEditing) {
-      onFinishEditing();
+    if (profileData?.data) {
+      setRecruiter(profileData.data);
+      setEditedRecruiter({...profileData.data});
+    }
+  }, [profileData]);
+
+  const handleSaveProfile = async () => {
+    try {
+      await updateProfile(editedRecruiter).unwrap();
+      toast.success('Profile updated successfully!');
+      refetch(); // Refresh the data
+      if (setIsEditing) {
+        setIsEditing(false);
+      } else if (onFinishEditing) {
+        onFinishEditing();
+      }
+    } catch (error) {
+      toast.error(error.data?.message || 'Failed to update profile');
     }
   };
-  
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Create a local URL for preview
       const fileUrl = URL.createObjectURL(file);
-      setEditedRecruiter({...editedRecruiter, profilePicUrl: fileUrl});
+      setEditedRecruiter(prev => ({
+        ...prev,
+        profilePicUrl: fileUrl
+      }));
+      // Note: You'll need to actually upload this file to your server
+      // and update the profilePicUrl with the returned URL
     }
   };
-  
+
+  if (isLoading) return <div className="text-center py-10">Loading profile...</div>;
+  if (isError) return <div className="text-center py-10 text-red-500">Error loading profile</div>;
+  if (!recruiter) return <div className="text-center py-10">No profile data found</div>;
+
   // Display edit form if editing mode is on
-  if (isEditing) {
+  if (isEditing && editedRecruiter) {
     return (
       <div className="bg-white shadow overflow-hidden rounded-lg">
         <div className="px-4 py-5 sm:px-6">
@@ -77,8 +104,8 @@ const Profile = ({ recruiter, onUpdateProfile, isEditing, setIsEditing, onFinish
                       type="text"
                       name="name"
                       id="name"
-                      value={editedRecruiter.name}
-                      onChange={(e) => setEditedRecruiter({...editedRecruiter, name: e.target.value})}
+                      value={editedRecruiter.name || ''}
+                      onChange={(e) => setEditedRecruiter(prev => ({...prev, name: e.target.value}))}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -89,7 +116,7 @@ const Profile = ({ recruiter, onUpdateProfile, isEditing, setIsEditing, onFinish
                       type="email"
                       name="email"
                       id="email"
-                      value={editedRecruiter.email}
+                      value={editedRecruiter.email || ''}
                       disabled
                       className="mt-1 block w-full border border-gray-300 bg-gray-50 rounded-md shadow-sm py-2 px-3 focus:outline-none sm:text-sm"
                     />
@@ -102,8 +129,8 @@ const Profile = ({ recruiter, onUpdateProfile, isEditing, setIsEditing, onFinish
                       type="tel"
                       name="phone"
                       id="phone"
-                      value={editedRecruiter.phone}
-                      onChange={(e) => setEditedRecruiter({...editedRecruiter, phone: e.target.value})}
+                      value={editedRecruiter.phone || ''}
+                      onChange={(e) => setEditedRecruiter(prev => ({...prev, phone: e.target.value}))}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -120,8 +147,8 @@ const Profile = ({ recruiter, onUpdateProfile, isEditing, setIsEditing, onFinish
                       type="text"
                       name="companyName"
                       id="companyName"
-                      value={editedRecruiter.companyName}
-                      onChange={(e) => setEditedRecruiter({...editedRecruiter, companyName: e.target.value})}
+                      value={editedRecruiter.companyName || ''}
+                      onChange={(e) => setEditedRecruiter(prev => ({...prev, companyName: e.target.value}))}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -133,8 +160,8 @@ const Profile = ({ recruiter, onUpdateProfile, isEditing, setIsEditing, onFinish
                       name="companyWebsite"
                       id="companyWebsite"
                       placeholder="https://example.com"
-                      value={editedRecruiter.companyWebsite}
-                      onChange={(e) => setEditedRecruiter({...editedRecruiter, companyWebsite: e.target.value})}
+                      value={editedRecruiter.companyWebsite || ''}
+                      onChange={(e) => setEditedRecruiter(prev => ({...prev, companyWebsite: e.target.value}))}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>

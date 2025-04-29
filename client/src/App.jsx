@@ -7,12 +7,14 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import JobSeekerDashboardPage from './pages/JobSeekerDashboardPage';
 import RecruiterDashboardPage from './components/Recruiter/RecruiterDashboardPage';
 import VerificationCheck from './components/Recruiter/VerificationCheck';
+import { Toaster } from 'react-hot-toast';
 import JobPostingList from './components/Recruiter/JobPostingList';
 import Profile from './components/Recruiter/Profile';
 
 function App() {
   return (
     <Router>
+      <Toaster />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -22,6 +24,7 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/candidate/dashboard" element={<JobSeekerDashboardPage />} />
         <Route path="/recruiter/jobs" element={<RecruiterDashboardPage/>}/>
+        <Route path="/recruiter/profile" element={<Profile/>}/>
       </Routes>
     </Router>
   );

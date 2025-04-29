@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 
+
 const JobApplicationModal = ({ job, user, onClose, onApply }) => {
   const [applicationResume, setApplicationResume] = useState(user.resumeUrl);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedResume, setUploadedResume] = useState(null);
-  const [resumeUrl, setResumeUrl] = useState('');
-  console.log(job);
+  console.log("JOb",job);
   
   // Calculate match score based on user skills matching job requirements
   const getSkillMatchCount = () => {
@@ -26,7 +26,6 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
   const handleResumeChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Create a local URL for preview
       setUploadedResume(file);
       setApplicationResume(URL.createObjectURL(file));
     }
@@ -65,9 +64,8 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
       }
   
       // Proceed with your job application logic
-      await onApply(job.id, uploadedUrl);
+      await onApply(job, uploadedUrl);
   
-      onClose();
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('Failed to apply. Please try again later.');
@@ -76,13 +74,17 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
     }
   };
   
+  const handleClose = () => {
+    onClose();
+  };
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
           <h2 className="text-xl font-semibold text-gray-800">Job Application</h2>
           <button 
-            onClick={onClose}
+            type="button"
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-500"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,11 +97,11 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
         <div className="px-6 py-4">
           <div className="flex items-start mb-6">
             <div className="flex-shrink-0 h-16 w-16">
-              <img className="h-16 w-16 rounded-md" src={job.logo} alt={job.company} />
+              <img className="h-16 w-16 rounded-md" src={job.recruiterId.profilePicUrl} alt={job.company} />
             </div>
             <div className="ml-4 flex-1">
               <h3 className="text-2xl font-bold text-gray-900">{job.title}</h3>
-              <p className="text-gray-500 text-lg">{job.company} · {job.location}</p>
+              <p className="text-gray-500 text-lg">{job.recruiterId.companyName} · {job.location}</p>
               
               <div className="mt-2 flex items-center">
                 <span className="text-sm font-medium text-gray-500 mr-2">Match Score:</span>
@@ -154,7 +156,7 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
               </div>
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-1">Posted</h4>
-                <p className="text-gray-600">{job.postedAt}</p>
+                <p className="text-gray-600">{job.updatedAt}</p>
               </div>
             </div>
             
@@ -235,7 +237,7 @@ const JobApplicationModal = ({ job, user, onClose, onApply }) => {
                 <div className="flex items-center justify-end space-x-4">
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
                   >
                     Cancel

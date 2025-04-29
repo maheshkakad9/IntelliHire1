@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const RecruiterRegister = () => {
   const [name, setName] = useState('');
@@ -45,12 +46,13 @@ const RecruiterRegister = () => {
         }
       );
 
-      alert('Recruiter registered successfully!');
-      console.log(response.data);
+      toast("Recruiter registered successfully! Your profile is on review!");
+      // console.log(response.data);
       navigate('/recruiter/login');
     } catch (error) {
       console.error('Error registering recruiter:', error);
-      alert(error?.response?.data?.message || 'Registration failed!');
+      // alert(error?.response?.data?.message || 'Registration failed!');
+      toast("Registration Failed");
     } finally {
       setLoading(false);
     }

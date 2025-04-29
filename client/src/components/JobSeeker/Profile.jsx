@@ -1,38 +1,37 @@
-import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { useGetProfileQuery } from '../../../store/api/jobSeekerApi'; 
 
 const defaultAvatar = "https://via.placeholder.com/150";
 
 const Profile = () => {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { 
+    data: response, 
+    error, 
+    isLoading,
+    isFetching,
+    isSuccess
+   } = useGetProfileQuery();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/profile`,
-          { withCredentials: true }
-        );
-        setProfile(response.data.user);
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-        setError(err.response?.data?.message || err.message || 'Error fetching profile');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+   if (isLoading || isFetching) {
+    return <div>Loading user profile...</div>;
+   }
 
-  if (loading) return <div>Loading user profile...</div>;
-  if (error) return <div className="text-red-600">Error: {error}</div>;
-  if (!profile) return <div>No profile data found</div>;
+   if (error) {
+    return (
+      <div className="text-red-600">
+        Error: {error.data?.message || 'Failed to load profile'}
+      </div>
+    );
+  }
 
-  // Calculate profile completeness
+  if (!response?.user) {
+    return <div>No profile data found</div>;
+  }
+
+  const profile = response.user;
+  
   const calculateProfileCompleteness = () => {
+    if (!profile) return 0;
     const fields = [
       !!profile.name, 
       !!profile.email, 

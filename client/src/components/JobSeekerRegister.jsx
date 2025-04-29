@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const JobSeekerRegister = () => {
   const navigate = useNavigate();
@@ -64,11 +65,11 @@ const JobSeekerRegister = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      alert("Registration successful!");
+      toast("Registration Successful!");
       navigate('/login?type=user');
     } catch (err) {
       console.error('Registration error:', err);
-      alert("Registration failed.");
+      toast("Registration Failed!");
     } finally {
       setIsSubmitting(false);
     }
