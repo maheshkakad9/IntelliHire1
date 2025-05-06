@@ -10,6 +10,91 @@ const HomePage = () => {
   const [userType, setUserType] = useState('');
   const navigate = useNavigate();
 
+  const refreshToken = async () => {
+    try {
+      const refreshToken = Cookies.get('refreshToken');
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const baseUrl = import.meta.env.VITE_API_URL;
+      const endpoint = userType === 'recruiter'
+      ? '/api/v1/recruiters/refresh-token'
+      : '/api/v1/users/refresh-token';
+
+      const response = await fetch(
+        `${baseUrl}${endpoint}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Token refresh failed');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      handleLogout();
+      return null;
+    }
+  };
+
+  const checkTokenExpiration = () => {
+    const accessToken = Cookies.get('accessToken');
+    if (!accessToken) return;
+
+    try {
+        const decoded = jwtDecode(accessToken);
+        const now = Date.now() / 1000;
+        const expiresIn = decoded.exp - now;
+    } catch (error) {
+
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL;
+      const endpoint = userType === 'recruiter' 
+        ? '/api/v1/recruiter/logout' 
+        : '/api/v1/users/logout';
+  
+      // Call the appropriate logout endpoint
+      await fetch(`${baseUrl}${endpoint}`, {
+        method: 'POST',
+        credentials: 'include', // Important for cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      // Clear client-side state regardless of API response
+      Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
+      setIsLoggedIn(false);
+      setUserType('');
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear client-side state even if API call fails
+      Cookies.remove('accessToken');
+      Cookies.remove('refreshToken');
+      setIsLoggedIn(false);
+      setUserType('');
+      navigate('/');
+    }
+  };
+  
+
   useEffect(() => {
     const token = Cookies.get('accessToken');
     
@@ -37,12 +122,6 @@ const HomePage = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    setIsLoggedIn(false);
-    setUserType('');
-    navigate('/');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">

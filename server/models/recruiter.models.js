@@ -86,7 +86,7 @@ recruiterSchema.methods.generateRefreshToken = function(){
     return jwt.sign(
         {
             _id: this._id,
-            
+            userType: "recruiter"
         },
         process.env.REFRESH_TOKEN_SECRET,
         {

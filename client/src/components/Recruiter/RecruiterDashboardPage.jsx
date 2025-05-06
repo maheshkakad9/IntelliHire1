@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const RecruiterDashboard = () => {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'jobs'
@@ -20,6 +21,23 @@ const RecruiterDashboard = () => {
     employmentType: 'Full-Time'
   });
   const navigate = useNavigate();
+
+  // Add logout function
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/recruiter/logout`,
+        {},
+        { withCredentials: true }
+      );
+      navigate('/');
+      toast("Recruiter logout successfully!");
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if API call fails, redirect to login
+      navigate('/');
+    }
+  };
 
   // Fetch recruiter profile and jobs
   useEffect(() => {
@@ -101,6 +119,7 @@ const RecruiterDashboard = () => {
       {/* Profile Header */}
       <div className="bg-white shadow rounded-lg mb-6">
         <div className="px-6 py-4 flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
           <img 
             src={recruiterData.profilePicUrl} 
             alt="Profile" 
@@ -112,7 +131,16 @@ const RecruiterDashboard = () => {
             <p className="text-sm text-gray-500">{recruiterData.email} • {recruiterData.phone}</p>
           </div>
         </div>
-        
+
+        {/* Logout Button */}
+        <button
+            onClick={handleLogout}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            Logout
+          </button>
+        </div>
+
         {/* Navigation Tabs */}
         <div className="border-t border-gray-200">
           <nav className="flex -mb-px">

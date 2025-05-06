@@ -23,7 +23,7 @@ router.route("/getUsers").get(getAllUsers)
 
 //Secured routes
 router.route("/logout").post(verifyJWT, logoutUser)
-router.route("refresh-token").post(refreshAccessToken)
+router.route("/refresh-token").post(refreshAccessToken)
 router.route("/upload-resume").post(verifyJWT,uploadResume.single("resume"),uploadResumeToCloudinary);
 router.route("/profile").get(verifyJWT,getUserProfile);
 
