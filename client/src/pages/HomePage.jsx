@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import Cookies  from 'js-cookie'; 
@@ -8,84 +8,114 @@ import Cookies  from 'js-cookie';
 const HomePage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRefreshMessage, setShowRefreshMessage] = useState(false);
   const navigate = useNavigate();
 
-  const refreshToken = async () => {
-    try {
-      const refreshToken = Cookies.get('refreshToken');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
+  // Function to refresh token
+  const refreshToken = useCallback(async () => {
+    setIsRefreshing(true);
+    setShowRefreshMessage(true);
 
-      const baseUrl = import.meta.env.VITE_API_URL;
-      const endpoint = userType === 'recruiter'
-      ? '/api/v1/recruiters/refresh-token'
+    const refreshTokenValue = Cookies.get('refreshToken');
+    console.log('Refresh token:', refreshTokenValue);
+    if (!refreshTokenValue) {
+      console.warn('No refresh token available');
+      handleLogout();
+      return;
+    }
+
+    const baseUrl = import.meta.env.VITE_API_URL;
+    const endpoint = userType === 'recruiter'
+      ? '/api/v1/recruiter/refresh-token'
       : '/api/v1/users/refresh-token';
 
-      const response = await fetch(
-        `${baseUrl}${endpoint}`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        }
-      );
+    try {
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      });
 
-      if (!response.ok) {
-        throw new Error('Token refresh failed');
+      if (!response.ok) throw new Error('Token refresh failed');
+
+      const { data } = await response.json();
+
+      if (data?.accessToken) {
+        Cookies.set('accessToken', data.accessToken, {
+          expires: new Date(Date.now() + 15 * 60 * 1000),
+          secure: true,
+          sameSite: 'strict',
+        });
       }
-
-      const data = await response.json();
-      return data;
+      if (data?.refreshToken) {
+        Cookies.set('refreshToken', data.refreshToken, {
+          expires: 7,
+          secure: true,
+          sameSite: 'strict',
+        });
+      }
     } catch (error) {
-      console.error("Error refreshing token:", error);
+      console.error('Error refreshing token:', error);
       handleLogout();
-      return null;
+    } finally {
+      setIsRefreshing(false);
+      setShowRefreshMessage(false);
     }
-  };
+  }, [userType]);
 
-  const checkTokenExpiration = () => {
+  // Check token expiration and refresh if needed
+  const checkTokenExpiration = useCallback(async () => {
     const accessToken = Cookies.get('accessToken');
-    if (!accessToken) return;
+    const refresh = Cookies.get('refreshToken');
+
+    if (!refresh) {
+      handleLogout();
+      return;
+    }
+
+    if (!accessToken) {
+      await refreshToken();
+      return;
+    }
 
     try {
-        const decoded = jwtDecode(accessToken);
-        const now = Date.now() / 1000;
-        const expiresIn = decoded.exp - now;
+      const decoded = jwtDecode(accessToken);
+      const now = Date.now() / 1000;
+      const expiresIn = decoded.exp - now;
+      if (expiresIn < 300) {
+        await refreshToken();
+      }
     } catch (error) {
-
+      console.error('Token decode error:', error);
+      handleLogout();
     }
-  }
+  }, [refreshToken]);
 
+  // Set up interval to check token expiration
+  useEffect(() => {
+    const interval = setInterval(checkTokenExpiration, 60 * 1000);
+    checkTokenExpiration();
+    return () => clearInterval(interval);
+  }, [checkTokenExpiration]);
+
+  //Handle Logout
   const handleLogout = async () => {
     try {
       const baseUrl = import.meta.env.VITE_API_URL;
-      const endpoint = userType === 'recruiter' 
-        ? '/api/v1/recruiter/logout' 
+      const endpoint = userType === 'recruiter'
+        ? '/api/v1/recruiter/logout'
         : '/api/v1/users/logout';
-  
-      // Call the appropriate logout endpoint
+
       await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
-        credentials: 'include', // Important for cookies
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
       });
-  
-      // Clear client-side state regardless of API response
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      setIsLoggedIn(false);
-      setUserType('');
-      navigate('/');
-      
     } catch (error) {
-      console.error('Logout error:', error);
-      // Still clear client-side state even if API call fails
+      console.error('Logout API error:', error);
+    } finally {
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
       setIsLoggedIn(false);
@@ -93,38 +123,39 @@ const HomePage = () => {
       navigate('/');
     }
   };
-  
 
   useEffect(() => {
     const token = Cookies.get('accessToken');
-    
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        if (decoded && decoded.userType) {
+        if (decoded?.userType) {
           setIsLoggedIn(true);
           setUserType(decoded.userType);
         }
       } catch (error) {
-        console.error("Invalid token:", error);
-        setIsLoggedIn(false);
+        console.error('Invalid token:', error);
+        handleLogout();
       }
     }
   }, []);
 
   const handleGoToDashboard = () => {
-    if (userType === 'recruiter') {
-      navigate('/recruiter/jobs');
-    } else if (userType === 'user') {
-      navigate('/candidate/dashboard');
-    } else {
-      navigate('/');
-    }
+    if (isRefreshing) return;
+    if (userType === 'recruiter') navigate('/recruiter/jobs');
+    else if (userType === 'user') navigate('/candidate/dashboard');
+    else navigate('/');
   };
 
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Refresh Token Message */}
+      {showRefreshMessage && (
+        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white py-2 text-center z-50">
+          We're fetching your details, please wait...
+        </div>
+      )}
       {/* Hero Section */}
       <header className="bg-blue-600 text-white py-16">
         <div className="container mx-auto px-4 max-w-6xl">
@@ -135,13 +166,15 @@ const HomePage = () => {
               <>
                 <button 
                   onClick={handleGoToDashboard}
-                  className="bg-white text-blue-600 hover:bg-blue-100 px-6 py-3 rounded-lg font-semibold transition duration-300"
+                  disabled={isRefreshing}
+                  className={`bg-white text-blue-600 hover:bg-blue-100 px-6 py-3 rounded-lg font-semibold transition duration-300 ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Go to Dashboard
+                  {isRefreshing ? 'Please wait...' : 'Go to Dashboard'}
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className="bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+                  disabled={isRefreshing}
+                  className={`bg-blue-800 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Logout
                 </button>
