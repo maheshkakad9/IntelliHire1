@@ -1,15 +1,49 @@
-# React + Vite
+IntelliHire - AI-Powered Resume Evaluation and Job Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+IntelliHire is a modern full-stack web application that streamlines the recruitment process using AI-driven resume parsing and job matching. It enables recruiters to analyze resumes efficiently and allows job seekers to get feedback and apply to jobs with ease.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🚀 Features
+🧠 AI Resume Analysis – Parses resumes to extract relevant information like skills, experience, education, etc.
 
-## Expanding the ESLint configuration
+📊 Candidate Ranking – Ranks applicants based on job role relevance.
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+☁️ Cloudinary File Uploads – Upload and manage resume files securely.
 
-# Test update for Git push
+🧾 PDF/DOCX Resume Support – Upload resumes in multiple formats.
+
+👥 Role-Based Access – Separate flows for Recruiters, Job Seekers, and Admins.
+
+🔐 JWT Authentication with Auto-Refresh – Secure login sessions.
+
+🌐 MongoDB Integration – Stores user profiles, and job postings.
+
+
+🔧 Tech Stack
+Frontend: React.js, Tailwind CSS, React Router
+
+Backend: Node.js , Express, fastapi
+
+ML: Natural Language Processing
+
+Auth: JWT, Cookies
+
+Database: MongoDB(Mongoose)
+
+File Uploads: Cloudinary
+
+
+# Clone the repository
+git clone https://github.com/maheshkakad9/IntelliHire.git
+cd IntelliHire
+cd client  (To run frontend or client side )
+
+# Install dependencies
+npm install
+
+# Create a .env file and set the following (example)
+VITE_API_URL=http://localhost:8000
+
+# Run the app
+npm run dev
 
